@@ -22,6 +22,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @Mod(MinionsRemastered.MODID)
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class MinionsRemastered {
     public static final String MODID = "minions_remastered";
     public static final Logger LOGGER = LogUtils.getLogger();

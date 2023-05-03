@@ -76,13 +76,18 @@ public class MasterPacket {
     }
 
     public static class Handler {
+        @SuppressWarnings("Convert2Lambda")
         public static void onMessage(MasterPacket message, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                Player player = Minecraft.getInstance().player;
-                if (player != null) player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(cap -> {
-                    cap.getMinions().clear();
-                    cap.deserializeNBT(message.tag);
-                });
+            ctx.get().enqueueWork(new Runnable() {
+                @Override
+                public void run() {
+                    Player player = Minecraft.getInstance().player;
+                    if (player != null) player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(cap -> {
+                        cap.getMinions().clear();
+                        cap.deserializeNBT(message.tag);
+                    });
+                }
+
             });
 
             ctx.get().setPacketHandled(true);
