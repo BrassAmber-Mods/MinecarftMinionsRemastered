@@ -1,7 +1,6 @@
 package io.github.jodlodi.minions.minion;
 
 import io.github.jodlodi.minions.MinUtil;
-import io.github.jodlodi.minions.MinionsRemastered;
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
 import io.github.jodlodi.minions.network.BlinkPacket;
 import io.github.jodlodi.minions.network.PoofPacket;
@@ -10,16 +9,13 @@ import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.OldUsersConverter;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -33,9 +29,7 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
@@ -50,7 +44,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -73,7 +66,7 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     }
 
     @Override
-    protected void registerGoals() {//TODO dump full inventory goal
+    protected void registerGoals() {
         this.goalSelector.addGoal(0, new FollowOrderGoal(this, 1.0D));
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new FollowMasterGoal(this, 1.2D, 9.0F, 2.0F, false));
@@ -163,21 +156,6 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     @Override
     protected void pickUpItem(ItemEntity item) {
         this.getMastersCapability().ifPresent(masterCapability -> {
-            /*TODO: inventories
-            ItemStack stack = item.getItem().copy();
-            int stored = storeItem(masterCapability.getInventory(this.getMinionID(masterCapability)), stack);
-            if (stored > 0) {
-                stack.shrink(stored);
-                if (stack.isEmpty()) {
-                    this.onItemPickup(item);
-                    this.take(item, item.getItem().getCount());
-                    item.discard();
-                } else item.setItem(stack);
-            }
-
-            if (true) return;*/
-
-
             if (masterCapability.getContainerBlock() != null) {
                 BlockEntity entity = this.level.getBlockEntity(masterCapability.getContainerBlock());
                 if (entity != null && entity.getCapability(ForgeCapabilities.ITEM_HANDLER).isPresent()) {
@@ -205,63 +183,6 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     @Override
     public boolean canHoldItem(ItemStack stack) {
         return stack.getItem().canFitInsideContainerItems();
-    }
-
-    protected static int storeItem(CompoundTag inventory, ItemStack stack) {
-        if (!stack.isEmpty() && stack.getItem().canFitInsideContainerItems()) {
-            if (!inventory.contains("Items")) inventory.put("Items", new ListTag());
-
-            int contentWeight = getContentWeight(inventory);
-            int stackWeight = getWeight(stack);
-            int min = Math.min(stack.getCount(), (INVENTORY_SIZE - contentWeight) / stackWeight);
-            if (min == 0) return 0;
-            else {
-                ListTag items = inventory.getList("Items", 10);
-                Optional<CompoundTag> optionalMatchingItem = getMatchingItem(stack, items);
-                if (optionalMatchingItem.isPresent()) {
-                    CompoundTag matchingItem = optionalMatchingItem.get();
-                    ItemStack itemStack = ItemStack.of(matchingItem);
-                    itemStack.grow(min);
-                    itemStack.save(matchingItem);
-                    items.remove(matchingItem);
-                    items.add(0, matchingItem);
-                    MinionsRemastered.LOGGER.warn("Added {} {} into the inventory!", itemStack.getCount(), itemStack.getItem());
-                } else {
-                    ItemStack itemStack = stack.copy();
-                    itemStack.setCount(min);
-                    CompoundTag compoundTag = new CompoundTag();
-                    itemStack.save(compoundTag);
-                    items.add(0, compoundTag);
-                    MinionsRemastered.LOGGER.warn("Added {} {} into the inventory!", itemStack.getCount(), itemStack.getItem());
-                }
-
-                return min;
-            }
-        } else return 0;
-    }
-
-    private static int getContentWeight(CompoundTag inventory) {
-        return getContents(inventory).mapToInt((stack) -> getWeight(stack) * stack.getCount()).sum();
-    }
-
-    private static Stream<ItemStack> getContents(CompoundTag inventory) {
-        return inventory.getList("Items", 10).stream().map(CompoundTag.class::cast).map(ItemStack::of);
-    }
-
-    private static Optional<CompoundTag> getMatchingItem(ItemStack p_150757_, ListTag p_150758_) {
-        return p_150757_.is(Items.BUNDLE) ? Optional.empty() : p_150758_.stream().filter(CompoundTag.class::isInstance).map(CompoundTag.class::cast).filter((tag) ->
-                ItemStack.isSameItemSameTags(ItemStack.of(tag), p_150757_)).findFirst();
-    }
-
-    private static int getWeight(ItemStack stack) {
-        if (stack.is(Items.BUNDLE)) return 4 + getContentWeight(stack.getOrCreateTag());
-        else {
-            if ((stack.is(Items.BEEHIVE) || stack.is(Items.BEE_NEST)) && stack.hasTag()) {
-                CompoundTag compoundtag = BlockItem.getBlockEntityData(stack);
-                if (compoundtag != null && !compoundtag.getList("Bees", 10).isEmpty()) return 64;
-            }
-            return 64 / stack.getMaxStackSize();
-        }
     }
 
     protected void storeItem(IItemHandler outputIItemHandler, ItemEntity item) {
@@ -295,46 +216,6 @@ public class Minion extends PathfinderMob implements OwnableEntity {
                 }
             }
 
-        }
-    }
-
-    @Override
-    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-        Optional<IMasterCapability> masterCapabilityOptional = this.getMastersCapability();
-        if (masterCapabilityOptional.isPresent()) {
-            IMasterCapability masterCapability = masterCapabilityOptional.get();
-            CompoundTag inventory = masterCapability.getInventory(this.getMinionID(masterCapability));
-            if (dropContents(inventory, player, this)) return InteractionResult.SUCCESS;
-        }
-        return InteractionResult.FAIL;
-    }
-
-    private static boolean dropContents(CompoundTag inventory, Player player, Minion minion) {
-        if (!inventory.contains("Items")) return false;
-        else {
-            if (player instanceof ServerPlayer) {
-                ListTag listtag = inventory.getList("Items", 10);
-                for(int i = 0; i < listtag.size(); ++i) {
-                    CompoundTag tag = listtag.getCompound(i);
-                    ItemStack itemstack = ItemStack.of(tag);
-                    ItemEntity item = new ItemEntity(minion.level, minion.getX(), minion.getEyeY(), minion.getZ(), itemstack);
-                    item.setPickUpDelay(40);
-                    item.setThrower(minion.getUUID());
-
-                    float f7 = 0.3F;
-                    float f8 = Mth.sin(minion.getXRot() * Mth.DEG_TO_RAD);
-                    float f2 = Mth.cos(minion.getXRot() * Mth.DEG_TO_RAD);
-                    float f3 = Mth.sin(minion.getYHeadRot() * Mth.DEG_TO_RAD);
-                    float f4 = Mth.cos(minion.getYHeadRot() * Mth.DEG_TO_RAD);
-                    float f5 = minion.random.nextFloat() * ((float)Math.PI * 2F);
-                    float f6 = 0.02F * minion.random.nextFloat();
-                    item.setDeltaMovement((double)(-f3 * f2 * 0.3F) + Math.cos(f5) * (double)f6, -f8 * 0.3F + 0.1F + (minion.random.nextFloat() - minion.random.nextFloat()) * 0.1F, (double)(f4 * f2 * 0.3F) + Math.sin(f5) * (double)f6);
-                    minion.level.addFreshEntity(item);
-                }
-            }
-
-            inventory.remove("Items");
-            return true;
         }
     }
 
@@ -397,13 +278,6 @@ public class Minion extends PathfinderMob implements OwnableEntity {
 
     public float getMineSpeed() {
         return 3.75F;//TODO
-    }
-
-    public void release() {
-        if (this.getOwner() instanceof Player player) {
-            player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(iMasterCapability -> iMasterCapability.removeMinion(this.uuid));
-        }
-        this.discard();
     }
 
     @Nullable
