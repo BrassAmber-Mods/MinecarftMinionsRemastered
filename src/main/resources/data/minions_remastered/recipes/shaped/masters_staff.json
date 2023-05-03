@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "G": {
+      "item": "minecraft:raw_gold"
+    },
+    "D": {
+      "item": "minecraft:green_dye"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    "  G",
+    " D ",
+    "S  "
+  ],
+  "result": {
+    "item": "minions_remastered:masters_staff"
+  }
+}

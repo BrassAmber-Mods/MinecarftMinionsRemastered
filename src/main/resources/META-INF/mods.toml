@@ -1,15 +1,15 @@
 modLoader="javafml" #mandatory
 loaderVersion="[43,)" #mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
-license="All rights reserved"
+license="GNU Lesser General Public License"
 #issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/" #optional
 [[mods]] #mandatory
-modId="minions_remake" #mandatory
+modId="minions_remastered" #mandatory
 # ${file.jarVersion} will substitute the value of the Implementation-Version as read from the mod's JAR file metadata
 version="${file.jarVersion}" #mandatory
-displayName="Example Mod" #mandatory
+displayName="Minions Remastered" #mandatory
 #updateJSONURL="https://change.me.example.invalid/updates.json" #optional
 #displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
-logoFile="minions_remake.png" #optional
+logoFile="minions_remastered.png" #optional
 credits="Thanks to Atomic Stryker for making the original and for giving permission to remake the mod." #optional
 authors="jodlodi, Brass_McCrafty" #optional
 # Display Test controls the display for your mod in the server connection screen
@@ -22,10 +22,11 @@ authors="jodlodi, Brass_McCrafty" #optional
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Dez nuts
+THIS MOD IS A WORK IN PROGRESS
+Thank you for playing though :)
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies.minions_remake]] #optional
+[[dependencies.minions_remastered]] #optional
     # the modid of the dependency
     modId="forge" #mandatory
     # Does this dependency have to exist - if not, ordering below must be specified
@@ -37,7 +38,7 @@ Dez nuts
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="BOTH"
 # Here's another dependency
-[[dependencies.minions_remake]]
+[[dependencies.minions_remastered]]
     modId="minecraft"
     mandatory=true
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
