@@ -33,25 +33,25 @@ import java.util.Map;
 @ParametersAreNonnullByDefault
 public class MineDownOrder extends AbstractOrder {
     public static final ResourceLocation ID = MinionsRemastered.locate("mine_down_order");
-    public static final List<Direction> DIRECTIONS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
+    public static final List<Direction> DIRECTIONS = List.of(Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST);
     public static final BlockState STAIRS = Blocks.BLACKSTONE_STAIRS.defaultBlockState();
 
     //Stored variables
     private final BlockPos minPos;
     private final BlockPos maxPos;
     private int currentY;
-    private final Direction startPoint;
+    private final int startDir;
     private final boolean stairs;
 
     //Temp variables
     private final Map<Integer, BlockPos> mineMap = new HashMap<>();
     private final Map<Integer, Float> breakMap = new HashMap<>();
 
-    public MineDownOrder(BlockPos minPos, BlockPos maxPos, Direction startPoint, boolean stairs) {
+    public MineDownOrder(BlockPos minPos, BlockPos maxPos, int startDir, boolean stairs) {
         this.minPos = minPos;
         this.maxPos = maxPos;
         this.currentY = maxPos.getY();
-        this.startPoint = startPoint;
+        this.startDir = startDir;
         this.stairs = stairs;
     }
 
@@ -59,7 +59,7 @@ public class MineDownOrder extends AbstractOrder {
         this.minPos = BlockPos.of(tag.getLong("min"));
         this.maxPos = BlockPos.of(tag.getLong("max"));
         this.currentY = tag.getInt("currentY");
-        this.startPoint = DIRECTIONS.get(tag.getInt("startPoint"));
+        this.startDir = tag.getInt("startDir");
         this.stairs = tag.getBoolean("stairs");
     }
 
@@ -69,7 +69,7 @@ public class MineDownOrder extends AbstractOrder {
             compoundTag.putLong("min", this.minPos.asLong());
             compoundTag.putLong("max", this.maxPos.asLong());
             compoundTag.putInt("currentY", this.currentY);
-            compoundTag.putInt("startPoint", DIRECTIONS.indexOf(this.startPoint));
+            compoundTag.putInt("startDir", this.startDir);
             compoundTag.putBoolean("stairs", this.stairs);
         });
     }
@@ -201,12 +201,11 @@ public class MineDownOrder extends AbstractOrder {
         boolean zMin = minZ == z;
 
         int depth = this.maxPos.getY() - pos.getY();
-        int dirID = DIRECTIONS.indexOf(this.startPoint);
 
         int adjustedSize = sizeMinusOne - 1;
         if (adjustedSize <= 0) adjustedSize = 1;
 
-        Direction dir = DIRECTIONS.get((dirID + (depth / adjustedSize)) % 4);
+        Direction dir = DIRECTIONS.get((this.startDir + (depth / adjustedSize)) % 4);
 
         int adjustedDepth = depth % adjustedSize;
 
@@ -216,12 +215,12 @@ public class MineDownOrder extends AbstractOrder {
             int dirX = dir.getNormal().getX();
             if (dirX == 1) {
                 if (xMax) {
-                    if (sizeMinusOne > 1 && adjustedDepth == 0 && zMax) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
-                    if (z + 1 == maxZ - adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
+                    if (sizeMinusOne > 1 && adjustedDepth == 0 && zMin) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
+                    if (z - 1 == minZ + adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
                 }
             } else if (xMin) {
-                if (sizeMinusOne > 1 && adjustedDepth == 0 && zMin) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
-                if (z - 1 == minZ + adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
+                if (sizeMinusOne > 1 && adjustedDepth == 0 && zMax) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
+                if (z + 1 == maxZ - adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
             }
         } else {
             Direction faceDir = DIRECTIONS.get((DIRECTIONS.indexOf(dir) + 3) % 4);
@@ -229,12 +228,12 @@ public class MineDownOrder extends AbstractOrder {
             int dirZ = dir.getNormal().getZ();
             if (dirZ == 1) {
                 if (zMin) {
-                    if (sizeMinusOne > 1 && adjustedDepth == 0 && xMax) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
-                    if (x + 1 == maxX - adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
+                    if (sizeMinusOne > 1 && adjustedDepth == 0 && xMin) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
+                    if (x - 1 == minX + adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
                 }
             } else if (zMax) {
-                if (sizeMinusOne > 1 && adjustedDepth == 0 && xMin) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
-                if (x - 1 == minX + adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
+                if (sizeMinusOne > 1 && adjustedDepth == 0 && xMax) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
+                if (x + 1 == maxX - adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
             }
         }
 

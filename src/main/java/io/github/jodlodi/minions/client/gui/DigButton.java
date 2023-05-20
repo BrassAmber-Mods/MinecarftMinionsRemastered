@@ -75,7 +75,29 @@ public class DigButton extends AdjustableMastersButton {
         BlockPos minPos = context.north(offset - (south ? trueSet : 0)).west(offset - (east ? trueSet : 0));
         BlockPos maxPos = context.south(offset - (!south ? trueSet : 0)).east(offset - (!east ? trueSet : 0));
 
-        PacketRegistry.CHANNEL.sendToServer(new MineDownButtonPacket(minPos, maxPos, player.getDirection().getOpposite(), this.stairs));
+        Vec3 pos = player.position();
+
+        int index = 0;
+        double minDis = maxPos.distToCenterSqr(pos);
+
+        double d = new BlockPos(minPos.getX(), minPos.getY(), maxPos.getZ()).distToCenterSqr(pos);
+        if (d < minDis) {
+            index = 1;
+            minDis = d;
+        }
+
+        d = minPos.distToCenterSqr(pos);
+        if (d < minDis) {
+            index = 2;
+            minDis = d;
+        }
+
+        d = new BlockPos(maxPos.getX(), minPos.getY(), minPos.getZ()).distToCenterSqr(pos);
+        if (d < minDis) {
+            index = 3;
+        }
+
+        PacketRegistry.CHANNEL.sendToServer(new MineDownButtonPacket(minPos, maxPos, index, this.stairs));
 
         this.screen.onClose();
     }
