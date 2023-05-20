@@ -42,7 +42,7 @@ public class CommonRegistry {
 
     public static final RegistryObject<EntityType<Minion>> MINION = ENTITY_TYPES.register("minion", () ->
             EntityType.Builder.<Minion>of((type, level) -> new Minion(level), MobCategory.CREATURE)
-                    .sized(0.6F, 0.95F)
+                    .sized(Minion.DEFAULT_WIDTH, Minion.DEFAULT_HEIGHT)
                     .clientTrackingRange(80)
                     .fireImmune()
                     .updateInterval(3).build("minion"));

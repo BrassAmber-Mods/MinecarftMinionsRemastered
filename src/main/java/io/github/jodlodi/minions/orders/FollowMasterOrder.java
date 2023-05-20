@@ -2,7 +2,7 @@ package io.github.jodlodi.minions.orders;
 
 import io.github.jodlodi.minions.MinionsRemastered;
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
-import io.github.jodlodi.minions.minion.FollowOrderGoal;
+import io.github.jodlodi.minions.minion.goals.EnactOrderGoal;
 import io.github.jodlodi.minions.minion.Minion;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
@@ -42,7 +42,12 @@ public class FollowMasterOrder extends AbstractOrder { //TODO
     }
 
     @Override
-    public boolean goalCanContinueToUse(FollowOrderGoal goal) {
+    public boolean goalCanUse(EnactOrderGoal goal) {
+        return true;
+    }
+
+    @Override
+    public boolean goalCanContinueToUse(EnactOrderGoal goal) {
         if (goal.getNavigation().isDone()) {
             return false;
         } else {
@@ -51,17 +56,17 @@ public class FollowMasterOrder extends AbstractOrder { //TODO
     }
 
     @Override
-    public void goalStart(FollowOrderGoal goal) {
+    public void goalStart(EnactOrderGoal goal) {
 
     }
 
     @Override
-    public void goalStop(FollowOrderGoal goal) {
+    public void goalStop(EnactOrderGoal goal) {
 
     }
 
     @Override
-    public void goalTick(FollowOrderGoal goal) {
+    public void goalTick(EnactOrderGoal goal) {
         Minion minion = goal.getMinion();
         LivingEntity owner = goal.getOwner();
         minion.getLookControl().setLookAt(owner, 10.0F, (float)minion.getMaxHeadXRot());

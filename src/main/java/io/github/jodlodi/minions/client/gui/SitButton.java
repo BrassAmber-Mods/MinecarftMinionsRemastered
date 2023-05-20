@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
 import io.github.jodlodi.minions.minion.Minion;
-import io.github.jodlodi.minions.network.BanishPacket;
+import io.github.jodlodi.minions.network.SitPacket;
 import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.MethodsReturnNonnullByDefault;
@@ -19,10 +19,10 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class BanishButton extends MastersButton {
+public class SitButton extends MastersButton {
     protected final IMasterCapability capability;
 
-    public BanishButton(int x, int y, MastersStaffScreen.EntityStaffScreen screen, IMasterCapability capability) {
+    public SitButton(int x, int y, MastersStaffScreen.EntityStaffScreen screen, IMasterCapability capability) {
         super(x, y, screen);
         this.capability = capability;
     }
@@ -30,7 +30,7 @@ public class BanishButton extends MastersButton {
     @Override
     public void onPress() {
         if (this.getScreen().target instanceof Minion minion && this.capability.isMinion(minion.getUUID())) {
-            PacketRegistry.CHANNEL.sendToServer(new BanishPacket(minion.getUUID()));
+            PacketRegistry.CHANNEL.sendToServer(new SitPacket(minion.getUUID()));
             this.screen.onClose();
         }
     }
@@ -43,27 +43,23 @@ public class BanishButton extends MastersButton {
     @Override
     protected void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 130, 0, this.width, this.height);
+        this.blit(stack, this.x, this.y, 54, 57, this.width, this.height);
     }
 
     @Override
     protected void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 130, 19, this.width, this.height);
+        this.blit(stack, this.x, this.y, 54, 76, this.width, this.height);
     }
 
     @Override
     protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 130, 38, this.width, this.height);
+        this.blit(stack, this.x, this.y, 54, 95, this.width, this.height);
     }
 
     @Override
     protected List<? extends FormattedCharSequence> getTooltip() {
-        Component name = Component.literal("Minion");
-        if (this.getScreen().target instanceof Minion minion && this.capability.isMinion(minion.getUUID())) {
-            name = minion.getName();
-        }
-        return List.of(Component.literal("Banish ").append(name).withStyle(ChatFormatting.DARK_RED).getVisualOrderText());
+        return List.of(Component.literal("Sit").withStyle(ChatFormatting.BLUE).getVisualOrderText());
     }
 }

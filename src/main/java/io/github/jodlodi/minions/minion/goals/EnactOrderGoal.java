@@ -1,6 +1,7 @@
-package io.github.jodlodi.minions.minion;
+package io.github.jodlodi.minions.minion.goals;
 
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
+import io.github.jodlodi.minions.minion.Minion;
 import io.github.jodlodi.minions.orders.AbstractOrder;
 import io.github.jodlodi.minions.registry.CommonRegistry;
 import net.minecraft.MethodsReturnNonnullByDefault;
@@ -9,7 +10,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
-import net.minecraftforge.common.util.LazyOptional;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.EnumSet;
@@ -17,7 +17,7 @@ import java.util.Optional;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class FollowOrderGoal extends Goal {
+public class EnactOrderGoal extends Goal {
     private final Minion minion;
     private LivingEntity owner;
     private AbstractOrder order;
@@ -29,7 +29,7 @@ public class FollowOrderGoal extends Goal {
     public int timeToRecalcPath;
     public float oldWaterCost;
 
-    public FollowOrderGoal(Minion minion, double speedModifier) {
+    public EnactOrderGoal(Minion minion, double speedModifier) {
         this.minion = minion;
         this.level = minion.level;
         this.speedModifier = speedModifier;
@@ -39,19 +39,17 @@ public class FollowOrderGoal extends Goal {
 
     @Override
     public boolean canUse() {
+        if (this.minion.sittingOrRiding() || this.minion.getControllingPassenger() != null) return false;
         LivingEntity living = this.minion.getOwner();
         if (living != null) {
             this.owner = living;
-            LazyOptional<IMasterCapability> ma = living.getCapability(CommonRegistry.MASTER_CAPABILITY);
-            if (ma.isPresent()) {
-                Optional<IMasterCapability> oma = ma.resolve();
-                if (oma.isPresent()) {
-                    AbstractOrder order = oma.get().getOrder();
-                    if (order == null) return false;
-                    this.masterCapability = oma.get();
-                    this.order = order;
-                    return true;
-                }
+            Optional<IMasterCapability> oma = living.getCapability(CommonRegistry.MASTER_CAPABILITY).resolve();
+            if (oma.isPresent()) {
+                AbstractOrder order = oma.get().getOrder();
+                if (order == null) return false;
+                this.masterCapability = oma.get();
+                this.order = order;
+                return this.order.goalCanUse(this);
             }
         }
         return false;
@@ -59,6 +57,7 @@ public class FollowOrderGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
+        if (this.minion.sittingOrRiding() || this.minion.getControllingPassenger() != null) return false;
         return this.order == this.masterCapability.getOrder() && this.order.goalCanContinueToUse(this);
     }
 

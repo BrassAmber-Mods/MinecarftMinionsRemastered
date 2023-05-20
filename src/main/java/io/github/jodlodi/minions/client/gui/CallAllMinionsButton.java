@@ -13,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.TickEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
@@ -51,19 +50,19 @@ public class CallAllMinionsButton extends MastersButton {
     @Override
     protected void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 64, 138, this.width, this.height);
+        this.blit(stack, this.x, this.y, 149, 0, this.width, this.height);
+    }
+
+    @Override
+    protected void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick) {
+        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
+        this.blit(stack, this.x, this.y, 149, 19, this.width, this.height);
     }
 
     @Override
     protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 85, 138, this.width, this.height);
-        super.renderIcon(stack, mouseX, mouseY, partialTick);
-    }
-
-    @Override
-    public void onSelectedTick(TickEvent.ClientTickEvent event) {
-
+        this.blit(stack, this.x, this.y, 149, 38, this.width, this.height);
     }
 
     @Override

@@ -32,6 +32,7 @@ public class MasterCapabilityHandler implements IMasterCapability {
 
     private BlockPos containerBlock = null;
     private UUID containerEntity = null;//TODO
+    private int clientContainerEntity;
 
     @Override
     public void setEntity(Player player) {
@@ -165,6 +166,10 @@ public class MasterCapabilityHandler implements IMasterCapability {
             } catch (Exception exception) {
                 MinionsRemastered.LOGGER.warn("Failed to parse minion custom name {}", s, exception);
             }
+        }
+
+        if (inventory.contains("Color")) {
+            minion.setColor(inventory.getInt("Color"));
         }
     }
 

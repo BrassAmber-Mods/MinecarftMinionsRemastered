@@ -1,14 +1,15 @@
 package io.github.jodlodi.minions;
 
-import io.github.jodlodi.minions.event.UseStaffEvent;
+import io.github.jodlodi.minions.capabilities.IMasterCapability;
+import io.github.jodlodi.minions.network.BlockStaffScreenPacket;
 import io.github.jodlodi.minions.registry.CommonRegistry;
+import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -23,16 +24,12 @@ public class MastersStaff extends Item {
     public InteractionResult useOn(UseOnContext onContext) {
         Player player = onContext.getPlayer();
         if (player != null) {
-            player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(capability -> {
-                player.getCooldowns().addCooldown(this, 10);
-                MinecraftForge.EVENT_BUS.post(new UseStaffEvent(player, this.contextToHitResult(onContext)));
-            });
+            if (!player.level.isClientSide) {
+                player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(IMasterCapability::sendUpdatePacket);
+                PacketRegistry.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), new BlockStaffScreenPacket(onContext));
+            }
+            return InteractionResult.SUCCESS;
         }
-
-        return InteractionResult.SUCCESS;
-    }
-
-    protected BlockHitResult contextToHitResult(UseOnContext context) {
-        return new BlockHitResult(context.getClickLocation(), context.getClickedFace(), context.getClickedPos(), false);
+        return InteractionResult.FAIL;
     }
 }

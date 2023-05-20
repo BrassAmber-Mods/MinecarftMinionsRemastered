@@ -87,7 +87,6 @@ public class MasterPacket {
                         cap.deserializeNBT(message.tag);
                     });
                 }
-
             });
 
             ctx.get().setPacketHandled(true);

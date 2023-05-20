@@ -1,5 +1,6 @@
-package io.github.jodlodi.minions.minion;
+package io.github.jodlodi.minions.minion.goals;
 
+import io.github.jodlodi.minions.minion.Minion;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 

@@ -52,4 +52,5 @@ public class MinionsRemastered {
     }
 
     //TODO: MOD compat (kobold skins with TF installed)
+    //TODO: Take Master home order? maybe, sounds kinda hard to pathfind, but might be doable
 }

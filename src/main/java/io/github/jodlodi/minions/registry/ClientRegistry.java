@@ -17,10 +17,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @Mod.EventBusSubscriber(modid = MinionsRemastered.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientRegistry {
     public static final ModelLayerLocation MINION_MODEL = new ModelLayerLocation(MinionsRemastered.locate("minion_model"), "main");
+    public static final ModelLayerLocation MINION_ROBES = new ModelLayerLocation(MinionsRemastered.locate("minion_robes"), "main");
 
     @SubscribeEvent
     public static void layerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(MINION_MODEL, MinionEntityModel::createBodyLayer);
+        event.registerLayerDefinition(MINION_ROBES, MinionEntityModel::createBodyLayer);
     }
 
     @SubscribeEvent

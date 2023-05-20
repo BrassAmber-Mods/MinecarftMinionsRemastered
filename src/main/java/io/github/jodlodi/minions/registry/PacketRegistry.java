@@ -21,5 +21,9 @@ public class PacketRegistry {
         CHANNEL.registerMessage(++id, StopButtonPacket.class, StopButtonPacket::encode, StopButtonPacket::new, StopButtonPacket.Handler::onMessage);
         CHANNEL.registerMessage(++id, PoofPacket.class, PoofPacket::encode, PoofPacket::new, PoofPacket.Handler::onMessage);
         CHANNEL.registerMessage(++id, ContainerClearPacket.class, ContainerClearPacket::encode, ContainerClearPacket::new, ContainerClearPacket.Handler::onMessage);
+        CHANNEL.registerMessage(++id, EntityStaffScreenPacket.class, EntityStaffScreenPacket::encode, EntityStaffScreenPacket::new, EntityStaffScreenPacket.Handler::onMessage);
+        CHANNEL.registerMessage(++id, BlockStaffScreenPacket.class, BlockStaffScreenPacket::encode, BlockStaffScreenPacket::new, BlockStaffScreenPacket.Handler::onMessage);
+        CHANNEL.registerMessage(++id, SitPacket.class, SitPacket::encode, SitPacket::new, SitPacket.Handler::onMessage);
+        CHANNEL.registerMessage(++id, CarryLivingButtonPacket.class, CarryLivingButtonPacket::encode, CarryLivingButtonPacket::new, CarryLivingButtonPacket.Handler::onMessage);
     }
 }

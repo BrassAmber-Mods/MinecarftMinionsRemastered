@@ -69,6 +69,7 @@ public class MinionEntityModel<T extends Minion> extends HumanoidModel<T> {
 
 	@Override
 	public void setupAnim(T minion, float limbSwing, float limbSwingAmount, float ticks, float netHeadYaw, float headPitch) {
+		this.setupDefaults();
 		boolean flag = minion.getFallFlyingTicks() > 4;
 		boolean flag1 = minion.isVisuallySwimming();
 
@@ -86,11 +87,6 @@ public class MinionEntityModel<T extends Minion> extends HumanoidModel<T> {
 		}
 		this.head.xRot -= 0.1309F;
 
-		/*this.body.yRot = 0.0F;
-		this.rightArm.z = 0.0F;
-		this.rightArm.x = -5.0F;
-		this.leftArm.z = 0.0F;
-		this.leftArm.x = 5.0F;*/
 		float f = 1.0F;
 		if (flag) {
 			f = (float)minion.getDeltaMovement().lengthSqr();
@@ -112,14 +108,14 @@ public class MinionEntityModel<T extends Minion> extends HumanoidModel<T> {
 		this.leftLeg.yRot = 0.0F;
 		this.rightLeg.zRot = 0.0F;
 		this.leftLeg.zRot = 0.0F;
-		if (this.riding) {
+		if (this.riding || minion.getSit()) {
 			this.rightArm.xRot += (-(float)Math.PI / 5F);
 			this.leftArm.xRot += (-(float)Math.PI / 5F);
 			this.rightLeg.xRot = -1.4137167F;
-			this.rightLeg.yRot = ((float)Math.PI / 10F);
+			this.rightLeg.yRot = (-(float)Math.PI / 10F);
 			this.rightLeg.zRot = 0.07853982F;
 			this.leftLeg.xRot = -1.4137167F;
-			this.leftLeg.yRot = (-(float)Math.PI / 10F);
+			this.leftLeg.yRot = ((float)Math.PI / 10F);
 			this.leftLeg.zRot = -0.07853982F;
 		}
 
@@ -203,6 +199,11 @@ public class MinionEntityModel<T extends Minion> extends HumanoidModel<T> {
 			this.rightLeg.xRot = Mth.lerp(this.swimAmount, this.rightLeg.xRot, 0.3F * Mth.cos(limbSwing * 0.33333334F));
 		}
 
+		if (minion.isVehicle()) {
+			this.leftArm.xRot = 170.0F * Mth.DEG_TO_RAD;
+			this.rightArm.xRot = 170.0F * Mth.DEG_TO_RAD;
+		}
+
 		this.hat.copyFrom(this.head);
 	}
 
@@ -224,12 +225,22 @@ public class MinionEntityModel<T extends Minion> extends HumanoidModel<T> {
 	public void translateToHead(PoseStack poseStack) {
 		this.minion.translateAndRotate(poseStack);
 		this.body.translateAndRotate(poseStack);
-
-		/*modelpart.x += f;
-		modelpart.y -= 1.5F;*/
 		this.head.translateAndRotate(poseStack);
-		/*modelpart.x -= f;
-		modelpart.y += 1.5F;*/
 		poseStack.scale(0.65F, 0.65F, 0.65F);
+	}
+
+	protected void setupDefaults() {
+		this.body.yRot = 0.0F;
+		this.rightArm.z = -0.5F;
+		this.rightArm.x = -5.0F;
+		this.leftArm.z = -0.5F;
+		this.leftArm.x = 5.0F;
+
+		this.rightArm.xRot = 0.1309F;
+		this.rightArm.yRot = 0.0F;
+		this.rightArm.zRot = 0.0F;
+		this.leftArm.xRot = -0.1309F;
+		this.leftArm.yRot = 0.0F;
+		this.leftArm.zRot = 0.0F;
 	}
 }

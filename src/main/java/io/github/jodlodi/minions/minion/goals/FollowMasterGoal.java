@@ -1,5 +1,6 @@
-package io.github.jodlodi.minions.minion;
+package io.github.jodlodi.minions.minion.goals;
 
+import io.github.jodlodi.minions.minion.Minion;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,10 +18,6 @@ import java.util.EnumSet;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class FollowMasterGoal extends Goal {
-    public static final int TELEPORT_WHEN_DISTANCE_IS = 12;
-    private static final int MIN_HORIZONTAL_DISTANCE_FROM_PLAYER_WHEN_TELEPORTING = 2;
-    private static final int MAX_HORIZONTAL_DISTANCE_FROM_PLAYER_WHEN_TELEPORTING = 3;
-    private static final int MAX_VERTICAL_DISTANCE_FROM_PLAYER_WHEN_TELEPORTING = 1;
     private final Minion minion;
     private LivingEntity owner;
     private final LevelReader level;
@@ -44,7 +41,8 @@ public class FollowMasterGoal extends Goal {
     }
 
     @Override
-    public boolean canUse() {//TODO: false if busy
+    public boolean canUse() {
+        if (this.minion.sittingOrRiding()) return false;
         LivingEntity living = this.minion.getOwner();
         if (living == null) {
             return false;
@@ -59,7 +57,8 @@ public class FollowMasterGoal extends Goal {
     }
 
     @Override
-    public boolean canContinueToUse() {//TODO: false if busy
+    public boolean canContinueToUse() {
+        if (this.minion.sittingOrRiding()) return false;
         if (this.navigation.isDone()) {
             return false;
         } else {

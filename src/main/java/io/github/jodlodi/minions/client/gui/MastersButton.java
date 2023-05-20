@@ -44,19 +44,17 @@ public abstract class MastersButton extends Button {
         this.renderBackground(stack, mouseX, mouseY, partialTick);
         this.renderFrame(stack, mouseX, mouseY, partialTick);
         this.renderIcon(stack, mouseX, mouseY, partialTick);
+        this.renderExtra(stack, mouseX, mouseY, partialTick);
         if (this.isHoveredOrFocused()) this.renderToolTip(stack, mouseX, mouseY);
     }
 
-    protected void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick) {
+    protected abstract void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick);
 
-    }
+    protected abstract void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick);
 
-    protected void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 1, 117, this.width, this.height);
-    }
+    protected abstract void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick);
 
-    protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
+    protected void renderExtra(PoseStack stack, int mouseX, int mouseY, float partialTick) {
 
     }
 

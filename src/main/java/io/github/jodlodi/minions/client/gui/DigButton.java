@@ -28,10 +28,12 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class DigButton extends AdjustableMastersButton {
     protected int size;
+    protected boolean stairs;
 
     public DigButton(int x, int y, MastersStaffScreen.BlockStaffScreen screen) {
-        super(x, y, screen);
+        super(x, y, screen, true, true);
         this.size = 7;
+        this.stairs = true;
     }
 
     @Override
@@ -39,29 +41,22 @@ public class DigButton extends AdjustableMastersButton {
         return (MastersStaffScreen.BlockStaffScreen)this.screen;
     }
 
+    @Override
     protected void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 22, 117, this.width, this.height);
-    }
-
-    protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 43, 117, this.width, this.height);
-        super.renderIcon(stack, mouseX, mouseY, partialTick);
+        this.blit(stack, this.x, this.y, 73, 0, this.width, this.height);
     }
 
     @Override
-    boolean onMiniClick(double mouseX, double mouseY) {
-        if (this.isMouseOverMini((int)mouseX, (int)mouseY, this.x + 1, this.y + 13, 5, 5)) {
-            if (this.size > 1) this.size--;
-           return true;
-        }
+    protected void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick) {
+        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
+        this.blit(stack, this.x, this.y, 73, 19, this.width, this.height);
+    }
 
-        if (this.isMouseOverMini((int)mouseX, (int)mouseY, this.x + 13, this.y + 13, 5, 5)) {
-            this.size++;
-            return true;
-        }
-        return false;
+    @Override
+    protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
+        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
+        this.blit(stack, this.x, this.y, 73, 38, this.width, this.height);
     }
 
     @Override
@@ -80,7 +75,7 @@ public class DigButton extends AdjustableMastersButton {
         BlockPos minPos = context.north(offset - (south ? trueSet : 0)).west(offset - (east ? trueSet : 0));
         BlockPos maxPos = context.south(offset - (!south ? trueSet : 0)).east(offset - (!east ? trueSet : 0));
 
-        PacketRegistry.CHANNEL.sendToServer(new MineDownButtonPacket(minPos, maxPos));
+        PacketRegistry.CHANNEL.sendToServer(new MineDownButtonPacket(minPos, maxPos, player.getDirection().getOpposite(), this.stairs));
 
         this.screen.onClose();
     }
@@ -118,6 +113,24 @@ public class DigButton extends AdjustableMastersButton {
 
     @Override
     protected List<? extends FormattedCharSequence> getTooltip() {
-        return List.of(Component.literal("Dig Mineshaft").withStyle(ChatFormatting.BLUE).getVisualOrderText(), Component.literal("Size: " + this.size).withStyle(ChatFormatting.GRAY).getVisualOrderText());
+        return List.of(
+                Component.literal("Dig Mineshaft").withStyle(ChatFormatting.BLUE).getVisualOrderText(),
+                Component.literal("Size: " + this.size).withStyle(ChatFormatting.GRAY).getVisualOrderText(),
+                Component.literal(this.stairs ? "With stairs" : "Without stairs").withStyle(ChatFormatting.GRAY).getVisualOrderText());
+    }
+
+    @Override
+    protected void onLeftPress() {
+        if (this.size > 1) this.size--;
+    }
+
+    @Override
+    protected void onTogglePress() {
+        this.stairs = !this.stairs;
+    }
+
+    @Override
+    protected void onRightPress() {
+        this.size++;
     }
 }

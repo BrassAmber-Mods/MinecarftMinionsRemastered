@@ -2,6 +2,7 @@ package io.github.jodlodi.minions.minion;
 
 import io.github.jodlodi.minions.MinUtil;
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
+import io.github.jodlodi.minions.minion.goals.*;
 import io.github.jodlodi.minions.network.BlinkPacket;
 import io.github.jodlodi.minions.network.PoofPacket;
 import io.github.jodlodi.minions.registry.CommonRegistry;
@@ -23,16 +24,19 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.items.IItemHandler;
@@ -42,6 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -50,8 +55,12 @@ import java.util.UUID;
 public class Minion extends PathfinderMob implements OwnableEntity {
     protected static final EntityDataAccessor<Optional<UUID>> DATA_OWNER_UUID = SynchedEntityData.defineId(Minion.class, EntityDataSerializers.OPTIONAL_UUID);
     protected static final EntityDataAccessor<Integer> DATA_BLINKING = SynchedEntityData.defineId(Minion.class, EntityDataSerializers.INT);
-    public static final int INVENTORY_SIZE = 256;
-    public Vec3 lastPos = Vec3.ZERO;
+    protected static final EntityDataAccessor<Integer> DATA_COLOR = SynchedEntityData.defineId(Minion.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Boolean> DATA_SITTING = SynchedEntityData.defineId(Minion.class, EntityDataSerializers.BOOLEAN);
+    public static final int BLINK_COOLDOWN = 20;
+    public static final int DEFAULT_RED = 9185572;
+    public static final float DEFAULT_WIDTH = 0.6F;
+    public static final float DEFAULT_HEIGHT = 0.95F;
 
     public Minion(Level level) {
         super(CommonRegistry.MINION.get(), level);
@@ -63,25 +72,17 @@ public class Minion extends PathfinderMob implements OwnableEntity {
         super.defineSynchedData();
         this.entityData.define(DATA_OWNER_UUID, Optional.empty());
         this.entityData.define(DATA_BLINKING, 0);
+        this.entityData.define(DATA_COLOR, DEFAULT_RED);
+        this.entityData.define(DATA_SITTING, false);
     }
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(0, new FollowOrderGoal(this, 1.0D));
-        this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new EnactOrderGoal(this, 1.0D));
+        this.goalSelector.addGoal(1, new CustomFloatGoal(this));
         this.goalSelector.addGoal(2, new FollowMasterGoal(this, 1.2D, 9.0F, 2.0F, false));
         this.goalSelector.addGoal(3, new LookAtMasterGoal(this));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D) {
-            @Override
-            public boolean canUse() {
-                return !((Minion)this.mob).isOwnerHoldingStaff() && super.canUse();
-            }
-
-            @Override
-            public boolean canContinueToUse() {
-                return !((Minion)this.mob).isOwnerHoldingStaff() && super.canContinueToUse();
-            }
-        });
+        this.goalSelector.addGoal(4, new MinionRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
@@ -89,25 +90,20 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     @Override
     public void aiStep() {
         this.updateSwingTime();
+        this.dimensions = this.getDimensions(this.getPose());
         super.aiStep();
-        if (this.isEnactingOrder()) {
-            Optional.ofNullable(this.navigation.getPath()).ifPresent(path -> {
-                if (!path.canReach() || (this.position().equals(this.lastPos) && this.random.nextInt(10) == 1)) {//TODO: see if theres a better way
-                    BlockPos nearbyPos = MinUtil.randomOpenNearby(path.getTarget(), level);
-                    if (nearbyPos == null) nearbyPos = path.getTarget().above();
-                    this.blink(nearbyPos);
-                    this.navigation.stop();
-                }
-                this.lastPos = this.position();
-            });
-        }
+    }
+
+    @Override
+    protected PathNavigation createNavigation(Level level) {
+        return new MinionNavigation(this, level);
     }
 
     @Override
     public void tick() {
         if (!this.level.isClientSide) {
             int blink = this.entityData.get(DATA_BLINKING);
-            if (blink > 0) {
+            if (blink > -BLINK_COOLDOWN) {
                 this.entityData.set(DATA_BLINKING, blink - 1);
                 this.getLookControl().tick();
                 if (blink == 1) {
@@ -130,12 +126,16 @@ public class Minion extends PathfinderMob implements OwnableEntity {
         super.remove(removalReason);
     }
 
-    protected int getMinionID(IMasterCapability masterCapability) {
+    public int getMinionID(IMasterCapability masterCapability) {
         return masterCapability.getMinions().indexOf(this.getUUID());
     }
 
     public boolean isOwnerHoldingStaff() {
-        return this.getOwner() != null && this.getOwner().getMainHandItem().is(CommonRegistry.MASTERS_STAFF.get());
+        LivingEntity living = this.getOwner();
+        if (living != null) {
+            return living.getMainHandItem().is(CommonRegistry.MASTERS_STAFF.get()) || living.getOffhandItem().is(CommonRegistry.MASTERS_STAFF.get());
+        }
+        return false;
     }
 
     @Override
@@ -145,6 +145,24 @@ public class Minion extends PathfinderMob implements OwnableEntity {
             tag.putString("CustomName", Component.Serializer.toJson(component));
         });
         super.setCustomName(component);
+    }
+
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack item = player.getItemInHand(hand);
+        if (item.getItem() instanceof DyeItem dyeItem) {
+            IMasterCapability cap = this.getMastersCapability().orElse(null);
+            if (cap != null && player == this.getOwner()) {
+                CompoundTag tag = cap.getInventory(this.getMinionID(cap));
+                int newColor = MinUtil.dye(dyeItem, MinUtil.getColor(tag));
+                tag.putInt("Color", newColor);
+                this.entityData.set(DATA_COLOR, newColor);
+            }
+            if (!player.getAbilities().instabuild) item.shrink(1);
+            return InteractionResult.sidedSuccess(this.level.isClientSide);
+        }
+
+        return super.mobInteract(player, hand);
     }
 
     @Override
@@ -233,6 +251,30 @@ public class Minion extends PathfinderMob implements OwnableEntity {
         return this.entityData.get(DATA_BLINKING) > 0;
     }
 
+    public boolean canBlink() {
+        return this.entityData.get(DATA_BLINKING) <= -BLINK_COOLDOWN;
+    }
+
+    public void setColor(int color) {
+        this.entityData.set(DATA_COLOR, color);
+    }
+
+    public int getColor() {
+        return this.entityData.get(DATA_COLOR);
+    }
+
+    public void setSit(boolean sit) {
+        this.entityData.set(DATA_SITTING, sit);
+    }
+
+    public boolean getSit() {
+        return this.entityData.get(DATA_SITTING);
+    }
+
+    public boolean sittingOrRiding() {
+        return this.isPassenger() || this.getSit();
+    }
+
     @Override
     public boolean isPersistenceRequired() {
         return true;
@@ -249,7 +291,7 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     }
 
     public boolean isEnactingOrder() {
-        return this.goalSelector.getRunningGoals().anyMatch(wrappedGoal -> wrappedGoal.getGoal() instanceof FollowOrderGoal);
+        return this.goalSelector.getRunningGoals().anyMatch(wrappedGoal -> wrappedGoal.getGoal() instanceof EnactOrderGoal);
     }
 
     public void blink(BlockPos pos) {
@@ -277,7 +319,17 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     }
 
     public float getMineSpeed() {
-        return 3.75F;//TODO
+        return 3.75F;//FIXME
+    }
+
+    @Override
+    public double getPassengersRidingOffset() {
+        return (double)this.dimensions.height * 0.75D * (this.getSit() ? 0.9D : 1.2D);
+    }
+
+    @Override
+    public boolean canRiderInteract() {
+        return true;
     }
 
     @Nullable
@@ -311,6 +363,8 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         if (this.getOwnerUUID() != null) tag.putUUID("Owner", this.getOwnerUUID());
+        tag.putInt("Color", this.getColor());
+        tag.putBoolean("Sit", this.getSit());
     }
 
     @Override
@@ -321,6 +375,14 @@ public class Minion extends PathfinderMob implements OwnableEntity {
         else if (this.getServer() != null) uuid = OldUsersConverter.convertMobOwnerIfNecessary(this.getServer(), tag.getString("Owner"));
 
         if (uuid != null) this.setOwnerUUID(uuid);
+
+        this.setColor(MinUtil.getColor(tag));
+        this.getMastersCapability().ifPresent(masterCapability -> {
+            CompoundTag inventory = masterCapability.getInventory(this.getMinionID(masterCapability));
+            this.setColor(MinUtil.getColor(inventory));
+        });
+
+        this.setSit(tag.contains("Sit") && tag.getBoolean("Sit"));
     }
 
     @Override
@@ -332,5 +394,87 @@ public class Minion extends PathfinderMob implements OwnableEntity {
         if (!iMasterCapability.isMinion(this.getUUID())) {
             this.discard();
         }
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public void travel(Vec3 vec3) {
+        if (this.isAlive() && !this.sittingOrRiding()) {
+            Entity entity = this.getControllingPassenger();
+            if (this.isVehicle() && entity instanceof Player) {
+                this.setYRot(entity.getYRot());
+                this.yRotO = this.getYRot();
+                this.setXRot(entity.getXRot() * 0.5F);
+                this.setRot(this.getYRot(), this.getXRot());
+                this.yBodyRot = this.getYRot();
+                this.yHeadRot = this.getYRot();
+                this.maxUpStep = 1.15F;
+                this.flyingSpeed = this.getSpeed() * 0.1F;
+
+                if (this.isControlledByLocalInstance()) {
+                    float f = this.getSteeringSpeed();
+
+                    this.setSpeed(f);
+                    super.travel(new Vec3(0.0D, 0.0D, 1.0D));
+                    this.lerpSteps = 0;
+                } else {
+                    this.calculateEntityAnimation(this, false);
+                    this.setDeltaMovement(Vec3.ZERO);
+                }
+
+                this.tryCheckInsideBlocks();
+                return;
+            }
+        }
+        this.maxUpStep = 0.5F;
+        this.flyingSpeed = 0.02F;
+        super.travel(vec3);
+    }
+
+
+    @Override
+    public Vec3 collide(Vec3 vec34) {
+        AABB aabb = MinUtil.getRidingAABB(this);
+        List<VoxelShape> list = this.level.getEntityCollisions(this, aabb.expandTowards(vec34));
+        Vec3 vec3 = vec34.lengthSqr() == 0.0D ? vec34 : collideBoundingBox(this, vec34, aabb, this.level, list);
+        boolean flag = vec34.x != vec3.x;
+        boolean flag1 = vec34.y != vec3.y;
+        boolean flag2 = vec34.z != vec3.z;
+        boolean flag3 = this.onGround || flag1 && vec34.y < 0.0D;
+        float stepHeight = getStepHeight();
+        if (stepHeight > 0.0F && flag3 && (flag || flag2)) {
+            Vec3 vec31 = collideBoundingBox(this, new Vec3(vec34.x, stepHeight, vec34.z), aabb, this.level, list);
+            Vec3 vec32 = collideBoundingBox(this, new Vec3(0.0D, stepHeight, 0.0D), aabb.expandTowards(vec34.x, 0.0D, vec34.z), this.level, list);
+            if (vec32.y < (double)stepHeight) {
+                Vec3 vec33 = collideBoundingBox(this, new Vec3(vec34.x, 0.0D, vec34.z), aabb.move(vec32), this.level, list).add(vec32);
+                if (vec33.horizontalDistanceSqr() > vec31.horizontalDistanceSqr()) {
+                    vec31 = vec33;
+                }
+            }
+
+            if (vec31.horizontalDistanceSqr() > vec3.horizontalDistanceSqr()) {
+                return vec31.add(collideBoundingBox(this, new Vec3(0.0D, -vec31.y + vec34.y, 0.0D), aabb.move(vec31), this.level, list));
+            }
+        }
+
+        return vec3;
+    }
+
+    @Nullable
+    public Entity getControllingPassenger() {
+        Entity entity = this.getFirstPassenger();
+        return entity != null && this.canBeControlledBy(entity) ? entity : null;
+    }
+
+    protected boolean canBeControlledBy(Entity entity) {
+        if (entity instanceof Player player) {
+            return player.getMainHandItem().is(CommonRegistry.MASTERS_STAFF.get()) || player.getOffhandItem().is(CommonRegistry.MASTERS_STAFF.get());
+        } else {
+            return false;
+        }
+    }
+
+    public float getSteeringSpeed() {
+        return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED) * 0.225F;
     }
 }

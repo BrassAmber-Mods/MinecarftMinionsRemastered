@@ -1,7 +1,7 @@
 package io.github.jodlodi.minions.orders;
 
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
-import io.github.jodlodi.minions.minion.FollowOrderGoal;
+import io.github.jodlodi.minions.minion.goals.EnactOrderGoal;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -15,13 +15,15 @@ public abstract class AbstractOrder {
 
     abstract public ResourceLocation getID();
 
-    abstract public boolean goalCanContinueToUse(FollowOrderGoal goal);
+    abstract public boolean goalCanUse(EnactOrderGoal goal);
 
-    abstract public void goalStart(FollowOrderGoal goal);
+    abstract public boolean goalCanContinueToUse(EnactOrderGoal goal);
 
-    abstract public void goalStop(FollowOrderGoal goal);
+    abstract public void goalStart(EnactOrderGoal goal);
 
-    abstract public void goalTick(FollowOrderGoal goal);
+    abstract public void goalStop(EnactOrderGoal goal);
+
+    abstract public void goalTick(EnactOrderGoal goal);
 
     abstract public void tick(IMasterCapability masterCapability, Player player, Level level);
 

@@ -32,14 +32,22 @@ public class ContainerButton extends MastersButton {
         this.screen.onClose();
     }
 
+    @Override
     protected void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 22, 138, this.width, this.height);
+        this.blit(stack, this.x, this.y, 168, 0, this.width, this.height);
     }
 
+    @Override
+    protected void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick) {
+        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
+        this.blit(stack, this.x, this.y, 168, 19, this.width, this.height);
+    }
+
+    @Override
     protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 43, 138, this.width, this.height);
+        this.blit(stack, this.x, this.y, 168, 38, this.width, this.height);
     }
 
     @Override
