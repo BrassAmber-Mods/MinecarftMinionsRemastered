@@ -25,5 +25,6 @@ public class PacketRegistry {
         CHANNEL.registerMessage(++id, BlockStaffScreenPacket.class, BlockStaffScreenPacket::encode, BlockStaffScreenPacket::new, BlockStaffScreenPacket.Handler::onMessage);
         CHANNEL.registerMessage(++id, SitPacket.class, SitPacket::encode, SitPacket::new, SitPacket.Handler::onMessage);
         CHANNEL.registerMessage(++id, CarryLivingButtonPacket.class, CarryLivingButtonPacket::encode, CarryLivingButtonPacket::new, CarryLivingButtonPacket.Handler::onMessage);
+        CHANNEL.registerMessage(++id, MineAheadButtonPacket.class, MineAheadButtonPacket::encode, MineAheadButtonPacket::new, MineAheadButtonPacket.Handler::onMessage);
     }
 }

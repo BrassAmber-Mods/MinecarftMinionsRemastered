@@ -41,9 +41,10 @@ public class MinionNavigation extends GroundPathNavigation {
             Optional.ofNullable(this.getPath()).ifPresent(path -> {
                 if (this.shouldBlink(path)) {
                     BlockPos nearbyPos = MinUtil.randomOpenNearbyOrAboveOrBelow(path.getTarget(), level);
-                    if (nearbyPos == null) nearbyPos = path.getTarget().above();//FIXME, also maybe dont blink to destination, but next node insatead?
-                    minion.blink(nearbyPos);
-                    this.stop();
+                    if (nearbyPos != null) {
+                        minion.blink(nearbyPos);
+                        this.stop();
+                    }
                 }
             });
         }

@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -110,7 +111,11 @@ public class MastersStaffScreen extends Screen {
 
                 // BOTTOM BUTTON // ORDERS
                 if (capability.getOrder() == null) {
-                    buttonSetup[2] = new DigButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                    if (hitResult.getDirection().getAxis() == Direction.Axis.Y) {
+                        buttonSetup[2] = new DigButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                    } else {
+                        buttonSetup[2] = new MineButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                    }
                 } else {
                     buttonSetup[2] = new StopButton(0, BUTTON_DISTANCE, blockStaffScreen);
                 }

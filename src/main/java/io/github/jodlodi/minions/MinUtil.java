@@ -98,6 +98,23 @@ public class MinUtil {
         }
     }
 
+    public static void particleAtWall(RandomSource random, double constant, Level level, boolean axis, int minXz, int maxXz, int minY, int maxY) {
+        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? minXz : constant, minY, axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
+        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? minXz : constant, maxY, axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
+        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, minY, axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, maxY, axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+
+        for (int xz = minXz; xz <= maxXz - 1; xz++) {
+            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, minY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, maxY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+        }
+
+        for (int y = minY; y <= maxY - 1; y++) {
+            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? minXz : constant, y + random.nextDouble(), axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
+            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, y + random.nextDouble(), axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
     //TODO
     private static final ItemStack PICKAXE = Items.NETHERITE_PICKAXE.getDefaultInstance();
     private static final ItemStack AXE = Items.NETHERITE_AXE.getDefaultInstance();

@@ -146,7 +146,7 @@ public class MineDownOrder extends AbstractOrder {
 
         if (minion.distanceToSqr(center) > 4.0D) {
             this.breakMap.put(id, 0.0F);
-            Vec3 g = Vec3.atBottomCenterOf(pos);
+            Vec3 g = Vec3.atCenterOf(pos);
             navigation.moveTo(g.x, g.y, g.z, goal.getSpeedModifier());
         } else if (!minion.getBlinking()) {
             minion.swing(InteractionHand.MAIN_HAND);

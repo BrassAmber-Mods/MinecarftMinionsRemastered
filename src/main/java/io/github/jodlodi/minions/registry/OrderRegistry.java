@@ -1,9 +1,6 @@
 package io.github.jodlodi.minions.registry;
 
-import io.github.jodlodi.minions.orders.AbstractOrder;
-import io.github.jodlodi.minions.orders.CarryLivingOrder;
-import io.github.jodlodi.minions.orders.FollowMasterOrder;
-import io.github.jodlodi.minions.orders.MineDownOrder;
+import io.github.jodlodi.minions.orders.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
@@ -18,5 +15,6 @@ public class OrderRegistry {
         ORDERS.put(MineDownOrder.ID, MineDownOrder::new);
         ORDERS.put(FollowMasterOrder.ID, FollowMasterOrder::new);
         ORDERS.put(CarryLivingOrder.ID, CarryLivingOrder::new);
+        ORDERS.put(MineAheadOrder.ID, MineAheadOrder::new);
     }
 }
