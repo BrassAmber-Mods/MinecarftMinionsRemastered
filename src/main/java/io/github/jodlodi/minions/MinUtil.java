@@ -179,12 +179,10 @@ public class MinUtil {
 
     public static void blockLiquids(BlockPos pos, Level level) {
         for (Direction direction : Direction.values()) {
-            if (direction != Direction.UP) {
-                BlockPos relative = pos.relative(direction);
-                FluidState state = level.getFluidState(relative);
-                if (state != Fluids.EMPTY.defaultFluidState() && state.isSource() && level.getBlockState(relative).getMaterial().isReplaceable()) {
-                    MinUtil.stoneUp(relative, level);
-                }
+            BlockPos relative = pos.relative(direction);
+            FluidState state = level.getFluidState(relative);
+            if (state != Fluids.EMPTY.defaultFluidState() && state.isSource() && level.getBlockState(relative).getMaterial().isReplaceable()) {
+                MinUtil.stoneUp(relative, level);
             }
         }
     }

@@ -27,10 +27,12 @@ import java.util.List;
 @ParametersAreNonnullByDefault
 public class MineButton extends AdjustableMastersButton {
     protected int depth;
+    protected boolean small;
 
     public MineButton(int x, int y, MastersStaffScreen.BlockStaffScreen screen) {
-        super(x, y, screen, true, false);
+        super(x, y, screen, true, true);
         this.depth = 16;
+        this.small = false;
     }
 
     @Override
@@ -64,8 +66,8 @@ public class MineButton extends AdjustableMastersButton {
         Direction.Axis clockAxis = dir.getClockWise().getAxis();
 
         BlockPos context = screen.getContext().getBlockPos();
-        BlockPos minPos = context.below().relative(clockAxis, -1);
-        BlockPos maxPos = context.above().relative(clockAxis, 1);
+        BlockPos minPos = this.small ? context.below() : context.below().relative(clockAxis, -1);
+        BlockPos maxPos = this.small ? new BlockPos(context) : context.above().relative(clockAxis, 1);
 
         PacketRegistry.CHANNEL.sendToServer(new MineAheadButtonPacket(minPos, maxPos, dir, this.depth));
 
@@ -82,8 +84,8 @@ public class MineButton extends AdjustableMastersButton {
         Direction.Axis clockAxis = dir.getClockWise().getAxis();
 
         BlockPos context = screen.getContext().getBlockPos();
-        BlockPos minPos = context.below().relative(clockAxis, -1);
-        BlockPos maxPos = context.above().relative(clockAxis, 1);
+        BlockPos minPos = this.small ? context.below() : context.below().relative(clockAxis, -1);
+        BlockPos maxPos = this.small ? new BlockPos(context) : context.above().relative(clockAxis, 1);
 
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
             if (player.getRandom().nextInt(3) == 0) {
@@ -104,7 +106,8 @@ public class MineButton extends AdjustableMastersButton {
     protected List<? extends FormattedCharSequence> getTooltip() {
         return List.of(
                 Component.literal("Mine Mineshaft").withStyle(ChatFormatting.BLUE).getVisualOrderText(),
-                Component.literal("Depth: " + this.depth).withStyle(ChatFormatting.GRAY).getVisualOrderText());
+                Component.literal("Depth: " + this.depth).withStyle(ChatFormatting.GRAY).getVisualOrderText(),
+                Component.literal(this.small ? "Small mine" : "Large mine").withStyle(ChatFormatting.GRAY).getVisualOrderText());
     }
 
     @Override
@@ -114,7 +117,7 @@ public class MineButton extends AdjustableMastersButton {
 
     @Override
     protected void onTogglePress() {
-
+        this.small = !this.small;
     }
 
     @Override
