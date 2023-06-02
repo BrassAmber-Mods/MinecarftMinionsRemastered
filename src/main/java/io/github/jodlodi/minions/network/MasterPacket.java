@@ -82,7 +82,7 @@ public class MasterPacket {
                 @Override
                 public void run() {
                     Player player = Minecraft.getInstance().player;
-                    if (player != null) player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(cap -> {
+                    if (player != null && player.getId() == message.entityID) player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(cap -> {
                         cap.getMinions().clear();
                         cap.deserializeNBT(message.tag);
                     });

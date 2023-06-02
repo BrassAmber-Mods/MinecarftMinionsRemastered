@@ -6,6 +6,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -17,6 +18,7 @@ import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class BlockStaffScreenPacket {
+    private final int player;
     private final double x;
     private final double y;
     private final double z;
@@ -24,7 +26,8 @@ public class BlockStaffScreenPacket {
     private final BlockPos pos;
     private final boolean inside;
 
-    public BlockStaffScreenPacket(UseOnContext onContext) {
+    public BlockStaffScreenPacket(UseOnContext onContext, Player player) {
+        this.player = player.getId();
         Vec3 vec3 = onContext.getClickLocation();
         this.x = vec3.x;
         this.y = vec3.y;
@@ -35,6 +38,7 @@ public class BlockStaffScreenPacket {
     }
 
     public BlockStaffScreenPacket(FriendlyByteBuf buf) {
+        this.player = buf.readInt();
         this.x = buf.readDouble();
         this.y = buf.readDouble();
         this.z = buf.readDouble();
@@ -44,6 +48,7 @@ public class BlockStaffScreenPacket {
     }
 
     public void encode(FriendlyByteBuf buf) {
+        buf.writeInt(this.player);
         buf.writeDouble(this.x);
         buf.writeDouble(this.y);
         buf.writeDouble(this.z);
@@ -60,7 +65,7 @@ public class BlockStaffScreenPacket {
                 public void run() {
                     Minecraft minecraft = Minecraft.getInstance();
                     LocalPlayer player = minecraft.player;
-                    if (player != null) {
+                    if (player != null && player.getId() == message.player) {
                         Vec3 vec3 = new Vec3(message.x, message.y, message.z);
                         if (!player.isSecondaryUseActive() && player.distanceToSqr(vec3) <= 0.5D && vec3.y <= player.position().y + 0.25D) {
                             minecraft.setScreen(MastersStaffScreen.make(player, new EntityHitResult(player), false));

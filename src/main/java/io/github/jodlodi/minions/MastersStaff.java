@@ -26,7 +26,7 @@ public class MastersStaff extends Item {
         if (player != null) {
             if (!player.level.isClientSide) {
                 player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(IMasterCapability::sendUpdatePacket);
-                PacketRegistry.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), new BlockStaffScreenPacket(onContext));
+                PacketRegistry.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), new BlockStaffScreenPacket(onContext, player));
             }
             return InteractionResult.SUCCESS;
         }

@@ -16,20 +16,24 @@ import java.util.function.Supplier;
 
 @ParametersAreNonnullByDefault
 public class EntityStaffScreenPacket {
+    private final int player;
     private final int entityID;
     private final boolean hostile;
 
     public EntityStaffScreenPacket(Entity entity, Player player) {
+        this.player = player.getId();
         this.entityID = entity.getId();
         this.hostile = !player.getAbilities().instabuild && ((entity instanceof NeutralMob neutralMob && neutralMob.isAngryAt(player)) || entity instanceof Enemy);
     }
 
     public EntityStaffScreenPacket(FriendlyByteBuf buf) {
+        this.player = buf.readInt();
         this.entityID = buf.readInt();
         this.hostile = buf.readBoolean();
     }
 
     public void encode(FriendlyByteBuf buf) {
+        buf.writeInt(this.player);
         buf.writeInt(this.entityID);
         buf.writeBoolean(this.hostile);
     }
@@ -42,7 +46,7 @@ public class EntityStaffScreenPacket {
                 public void run() {
                     Minecraft minecraft = Minecraft.getInstance();
                     LocalPlayer player = minecraft.player;
-                    if (player != null) {
+                    if (player != null && player.getId() == message.player) {
                         Entity target = player.level.getEntity(message.entityID);
                         if (target != null) minecraft.setScreen(MastersStaffScreen.make(player, new EntityHitResult(target), message.hostile));
                     }
