@@ -39,15 +39,15 @@ public class MineDownOrder extends AbstractOrder {
     //Stored variables
     private final BlockPos minPos;
     private final BlockPos maxPos;
-    private int currentY;
     private final int startDir;
-    private final boolean stairs;
+    private final int stairs;
 
     //Temp variables
     private final Map<Integer, BlockPos> mineMap = new HashMap<>();
     private final Map<Integer, Float> breakMap = new HashMap<>();
+    private int currentY;
 
-    public MineDownOrder(BlockPos minPos, BlockPos maxPos, int startDir, boolean stairs) {
+    public MineDownOrder(BlockPos minPos, BlockPos maxPos, int startDir, int stairs) {
         this.minPos = minPos;
         this.maxPos = maxPos;
         this.currentY = maxPos.getY();
@@ -60,7 +60,7 @@ public class MineDownOrder extends AbstractOrder {
         this.maxPos = BlockPos.of(tag.getLong("max"));
         this.currentY = tag.getInt("currentY");
         this.startDir = tag.getInt("startDir");
-        this.stairs = tag.getBoolean("stairs");
+        this.stairs = tag.getInt("stairs");
     }
 
     @Override
@@ -70,7 +70,7 @@ public class MineDownOrder extends AbstractOrder {
             compoundTag.putLong("max", this.maxPos.asLong());
             compoundTag.putInt("currentY", this.currentY);
             compoundTag.putInt("startDir", this.startDir);
-            compoundTag.putBoolean("stairs", this.stairs);
+            compoundTag.putInt("stairs", this.stairs);
         });
     }
 
@@ -146,8 +146,7 @@ public class MineDownOrder extends AbstractOrder {
 
         if (minion.distanceToSqr(center) > 4.0D) {
             this.breakMap.put(id, 0.0F);
-            Vec3 g = Vec3.atCenterOf(pos);
-            navigation.moveTo(g.x, g.y, g.z, goal.getSpeedModifier());
+            navigation.moveTo(center.x, center.y, center.z, goal.getSpeedModifier());
         } else if (!minion.getBlinking()) {
             minion.swing(InteractionHand.MAIN_HAND);
             navigation.stop();
@@ -173,7 +172,7 @@ public class MineDownOrder extends AbstractOrder {
     }
 
     protected boolean isBlockBreakableDeluxe(BlockState state, Level level, BlockPos pos, Entity destroyer) {
-        if (this.stairs) {
+        if (this.stairs > 0) {
             BlockState stairCheck = this.stairCheck(pos, destroyer.level.random);
             if (stairCheck != null && state.getMaterial().isReplaceable()) {
                 level.setBlock(pos, stairCheck, 3);
@@ -205,33 +204,38 @@ public class MineDownOrder extends AbstractOrder {
         int adjustedSize = sizeMinusOne - 1;
         if (adjustedSize <= 0) adjustedSize = 1;
 
-        Direction dir = DIRECTIONS.get((this.startDir + (depth / adjustedSize)) % 4);
+        boolean clockWise = this.stairs == 1;
+
+        int index = (this.startDir + (depth / adjustedSize)) % 4;
+        if (!clockWise) index = 3 - index;
+        Direction dir = DIRECTIONS.get(index);
 
         int adjustedDepth = depth % adjustedSize;
 
         if (dir.getAxis() == Direction.Axis.X) {
             Direction faceDir = DIRECTIONS.get((DIRECTIONS.indexOf(dir) + 1) % 4);
-            if (sizeMinusOne == 1) faceDir = dir;
+
+            if (sizeMinusOne == 1) faceDir = clockWise ? dir : dir.getOpposite();
             int dirX = dir.getNormal().getX();
             if (dirX == 1) {
-                if (xMax) {
+                if (clockWise ? xMax : xMin) {
                     if (sizeMinusOne > 1 && adjustedDepth == 0 && zMin) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
                     if (z - 1 == minZ + adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
                 }
-            } else if (xMin) {
+            } else if (clockWise ? xMin : xMax) {
                 if (sizeMinusOne > 1 && adjustedDepth == 0 && zMax) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
                 if (z + 1 == maxZ - adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
             }
         } else {
             Direction faceDir = DIRECTIONS.get((DIRECTIONS.indexOf(dir) + 3) % 4);
-            if (sizeMinusOne == 1) faceDir = dir.getOpposite();
+            if (sizeMinusOne == 1) faceDir = clockWise ? dir.getOpposite() : dir;
             int dirZ = dir.getNormal().getZ();
             if (dirZ == 1) {
-                if (zMin) {
+                if (clockWise ? zMin : zMax) {
                     if (sizeMinusOne > 1 && adjustedDepth == 0 && xMin) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
                     if (x - 1 == minX + adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
                 }
-            } else if (zMax) {
+            } else if (clockWise ? zMax : zMin) {
                 if (sizeMinusOne > 1 && adjustedDepth == 0 && xMax) return randomSource.nextInt(100) == 1 ? MinUtil.GILDED_BLACKSTONE : MinUtil.BLACKSTONE;
                 if (x + 1 == maxX - adjustedDepth) return STAIRS.setValue(StairBlock.FACING, faceDir);
             }

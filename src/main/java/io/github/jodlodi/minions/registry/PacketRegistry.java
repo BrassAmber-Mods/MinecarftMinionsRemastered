@@ -26,5 +26,7 @@ public class PacketRegistry {
         CHANNEL.registerMessage(++id, SitPacket.class, SitPacket::encode, SitPacket::new, SitPacket.Handler::onMessage);
         CHANNEL.registerMessage(++id, CarryLivingButtonPacket.class, CarryLivingButtonPacket::encode, CarryLivingButtonPacket::new, CarryLivingButtonPacket.Handler::onMessage);
         CHANNEL.registerMessage(++id, MineAheadButtonPacket.class, MineAheadButtonPacket::encode, MineAheadButtonPacket::new, MineAheadButtonPacket.Handler::onMessage);
+        CHANNEL.registerMessage(++id, ChopButtonPacket.class, ChopButtonPacket::encode, ChopButtonPacket::new, ChopButtonPacket.Handler::onMessage);
+        CHANNEL.registerMessage(++id, HoeWartButtonPacket.class, HoeWartButtonPacket::encode, HoeWartButtonPacket::new, HoeWartButtonPacket.Handler::onMessage);
     }
 }

@@ -60,4 +60,8 @@ public interface IMasterCapability extends INBTSerializable<CompoundTag> {
 
     void finalizeMinion(Minion minion);
 
+    void setPaused(boolean paused);
+
+    boolean isPaused();
+
 }

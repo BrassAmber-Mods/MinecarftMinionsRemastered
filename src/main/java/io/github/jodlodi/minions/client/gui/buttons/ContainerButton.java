@@ -1,23 +1,26 @@
-package io.github.jodlodi.minions.client.gui;
+package io.github.jodlodi.minions.client.gui.buttons;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import io.github.jodlodi.minions.client.gui.MastersStaffScreen;
 import io.github.jodlodi.minions.network.ContainerBlockPacket;
 import io.github.jodlodi.minions.network.ContainerEntityPacket;
 import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
 
+@OnlyIn(Dist.CLIENT)
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class ContainerButton extends MastersButton {
+public class ContainerButton extends AbstractMastersButton {
     public ContainerButton(int x, int y, MastersStaffScreen screen) {
         super(x, y, screen);
     }
@@ -51,7 +54,7 @@ public class ContainerButton extends MastersButton {
     }
 
     @Override
-    protected List<? extends FormattedCharSequence> getTooltip() {
-        return List.of(Component.literal("Set Container").withStyle(ChatFormatting.BLUE).getVisualOrderText());
+    protected MutableComponent getName() {
+        return Component.literal("Set Container").withStyle(ChatFormatting.BLUE);
     }
 }

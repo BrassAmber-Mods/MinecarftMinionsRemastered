@@ -238,6 +238,11 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     }
 
     @Override
+    public boolean isNoGravity() {
+        return super.isNoGravity() || !this.canBlink();
+    }
+
+    @Override
     public boolean isPushedByFluid(FluidType type) {
         return !this.isEnactingOrder();
     }
@@ -399,6 +404,7 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     @Override
     @SuppressWarnings("deprecation")
     public void travel(Vec3 vec3) {
+        this.maxUpStep = 1.15F;
         if (this.isAlive() && !this.sittingOrRiding()) {
             Entity entity = this.getControllingPassenger();
             if (this.isVehicle() && entity instanceof Player) {
@@ -408,7 +414,6 @@ public class Minion extends PathfinderMob implements OwnableEntity {
                 this.setRot(this.getYRot(), this.getXRot());
                 this.yBodyRot = this.getYRot();
                 this.yHeadRot = this.getYRot();
-                this.maxUpStep = 1.15F;
                 this.flyingSpeed = this.getSpeed() * 0.1F;
 
                 if (this.isControlledByLocalInstance()) {
@@ -426,7 +431,6 @@ public class Minion extends PathfinderMob implements OwnableEntity {
                 return;
             }
         }
-        this.maxUpStep = 0.5F;
         this.flyingSpeed = 0.02F;
         super.travel(vec3);
     }
@@ -458,6 +462,12 @@ public class Minion extends PathfinderMob implements OwnableEntity {
         }
 
         return vec3;
+    }
+
+    @Override
+    public boolean canCollideWith(Entity entity) {
+        if (entity instanceof Minion minion && this.getOwner() != null && minion.getOwner() == this.getOwner()) return false;
+        return super.canCollideWith(entity);
     }
 
     @Nullable

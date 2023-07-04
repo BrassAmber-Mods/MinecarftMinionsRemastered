@@ -1,11 +1,14 @@
 package io.github.jodlodi.minions.client.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Quaternion;
 import com.mojang.math.Vector3f;
+import io.github.jodlodi.minions.MinReflections;
 import io.github.jodlodi.minions.MinionsRemastered;
+import io.github.jodlodi.minions.client.gui.buttons.*;
 import io.github.jodlodi.minions.minion.Minion;
 import io.github.jodlodi.minions.registry.CommonRegistry;
 import net.minecraft.MethodsReturnNonnullByDefault;
@@ -24,12 +27,15 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -38,11 +44,12 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.RenderTypeHelper;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @OnlyIn(Dist.CLIENT)
@@ -53,11 +60,15 @@ public class MastersStaffScreen extends Screen {
     public static final int BUTTON_DISTANCE = 32;
     public static final int POINTER_DISTANCE = 8;
 
-    private final MastersButton[] buttons = { null, null, null, null }; // [0]TOP, [1]RIGHT, [2]BOTTOM, [3]LEFT
+    private final AbstractMastersButton[] buttons = { null, null, null, null }; // [0]TOP, [1]RIGHT, [2]BOTTOM, [3]LEFT
 
     protected final HitResult context;
     protected final LocalPlayer player;
-    protected MastersButton selectedButton;
+
+    protected float realTime = 0.0F;
+    protected float time = 0.0F;
+    protected float boost = 1.0F;
+    protected float shade = 0.0F;
 
     public MastersStaffScreen(LocalPlayer player, HitResult context) {
         super(GameNarrator.NO_TITLE);
@@ -73,10 +84,6 @@ public class MastersStaffScreen extends Screen {
         return this.player;
     }
 
-    public @Nullable MastersButton getSelectedButton() {
-        return this.selectedButton;
-    }
-
     @Override
     public boolean isPauseScreen() {
         return false;
@@ -85,7 +92,7 @@ public class MastersStaffScreen extends Screen {
     @Override
     protected void init() {
         this.player.getCapability(CommonRegistry.MASTER_CAPABILITY).ifPresent(capability -> {
-            MastersButton[] buttonSetup = { null, null, null, null }; // [0]TOP, [1]RIGHT, [2]BOTTOM, [3]LEFT
+            AbstractMastersButton[] buttonSetup = { null, null, null, null }; // [0]TOP, [1]RIGHT, [2]BOTTOM, [3]LEFT
 
             boolean secondary = this.player.isSecondaryUseActive();
             if (this instanceof BlockStaffScreen blockStaffScreen) { // BLOCK RIGHT CLICK
@@ -111,13 +118,17 @@ public class MastersStaffScreen extends Screen {
 
                 // BOTTOM BUTTON // ORDERS
                 if (capability.getOrder() == null) {
-                    if (hitResult.getDirection().getAxis() == Direction.Axis.Y) {
-                        buttonSetup[2] = new DigButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                    if (this.player.level.getBlockState(hitResult.getBlockPos()).is(BlockTags.LOGS)) {
+                        buttonSetup[2] = new ChopOrderButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                    } else if (this.player.level.getBlockState(hitResult.getBlockPos()).is(BlockTags.WART_BLOCKS)) {
+                        buttonSetup[2] = new HoeWartButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                    }else if (hitResult.getDirection().getAxis() == Direction.Axis.Y) {
+                        buttonSetup[2] = new DigOrderButton(0, BUTTON_DISTANCE, blockStaffScreen);
                     } else {
-                        buttonSetup[2] = new MineButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                        buttonSetup[2] = new MineOrderButton(0, BUTTON_DISTANCE, blockStaffScreen);
                     }
                 } else {
-                    buttonSetup[2] = new StopButton(0, BUTTON_DISTANCE, blockStaffScreen);
+                    buttonSetup[2] = new StopOrderButton(0, BUTTON_DISTANCE, blockStaffScreen);
                 }
             } else if (this instanceof EntityStaffScreen entityStaffScreen) { // ENTITY RIGHT CLICK
                 if (entityStaffScreen.target == this.player) {
@@ -125,7 +136,11 @@ public class MastersStaffScreen extends Screen {
                     buttonSetup[1] = new ClearContainerButton(BUTTON_DISTANCE, 0, this);
 
                     // BOTTOM BUTTON // ORDERS
-                    buttonSetup[2] = new CarryLivingButton(0, BUTTON_DISTANCE, entityStaffScreen);
+                    if (capability.getOrder() == null) {
+                        buttonSetup[2] = new CarryLivingOrderButton(0, BUTTON_DISTANCE, entityStaffScreen);
+                    } else {
+                        buttonSetup[2] = new StopOrderButton(0, BUTTON_DISTANCE, entityStaffScreen);
+                    }
                 } else if (entityStaffScreen.target instanceof Minion minion) { // MINION
                     if (capability.isMinion(minion.getUUID())) {
                         // TOP BUTTON // SUMMONING
@@ -141,7 +156,11 @@ public class MastersStaffScreen extends Screen {
                             buttonSetup[1] = new ContainerButton(BUTTON_DISTANCE, 0, this);
 
                             // BOTTOM BUTTON // ORDERS
-                            buttonSetup[2] = new CarryLivingButton(0, BUTTON_DISTANCE, entityStaffScreen);
+                            if (capability.getOrder() == null) {
+                                buttonSetup[2] = new CarryLivingOrderButton(0, BUTTON_DISTANCE, entityStaffScreen);
+                            } else {
+                                buttonSetup[2] = new StopOrderButton(0, BUTTON_DISTANCE, entityStaffScreen);
+                            }
                         }
                     } else { // HOSTILE MOB
 
@@ -170,6 +189,28 @@ public class MastersStaffScreen extends Screen {
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        boolean clicked = super.mouseClicked(mouseX, mouseY, mouseButton);
+        if (!clicked) {
+            double centerX = this.width * 0.5D;
+            double centerY = this.height * 0.5D;
+            if (mouseX > centerX - 10.0D && mouseX < centerX + 10.0D && mouseY > centerY - 10.0D && mouseY < centerY + 10.0D) {
+                if (!this.isShiftKeyDown()) {
+                    this.boost *= 2.0F;
+                    this.boost += 3.0F;
+                }
+                if (this instanceof MastersStaffScreen.BlockStaffScreen screen) {
+                    SoundType soundType = this.player.level.getBlockState(screen.getContext().getBlockPos()).getSoundType();
+                    this.player.level.playLocalSound(this.player.getX(), this.player.getY(), this.player.getZ(), soundType.getHitSound(), this.player.getSoundSource(), (soundType.getVolume() + 1.0F) / 8.0F, soundType.getPitch() * 0.5F, false);
+                } else if (this instanceof MastersStaffScreen.EntityStaffScreen screen && screen.target instanceof Mob mob && screen.ambientSound != null) {
+                    this.player.level.playLocalSound(this.player.getX(), this.player.getY(), this.player.getZ(), screen.ambientSound, this.player.getSoundSource(), screen.soundVolume, mob.getVoicePitch(), false);
+                }
+            }
+        }
+        return clicked;
+    }
+
+    @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
         if (mouseButton == 1) {
             this.onClose();
@@ -178,60 +219,78 @@ public class MastersStaffScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double dragX, double dragY) {
-        int i = this.width / 2;
-        int j = this.height / 2;
+    public void tick() {
+        this.realTime += 1.0F;
+        this.time += this.boost;
+        this.boost *= 0.8F;
 
-        float deltaX = (float)mouseX - i;
-        float deltaY =  (float)mouseY - j;
-        float angle = (float)Math.atan2(deltaY, deltaX) * Mth.RAD_TO_DEG;
-        if (Mth.degreesDifferenceAbs(angle, 90) < 45) {
-            this.selectedButton = this.buttons[2];
-        } else this.selectedButton = this.buttons[0];//FIXME math
+        if (this.isShiftKeyDown()) {
+            if (this.shade < 1.0F) this.shade = Math.min(this.shade + 0.1F, 1.0F);
+        } else if (this.shade > 0.0F) this.shade = Math.max(this.shade - 0.1F, 0.0F);
 
-        return super.mouseDragged(mouseX, mouseY, mouseButton, dragX, dragY);
+        this.boost = Math.max(this.boost, 1.0F - this.shade);
+
+        if (this.minecraft == null) return;
+        double x = this.minecraft.mouseHandler.xpos() * (double) this.minecraft.getWindow().getGuiScaledWidth() / (double) this.minecraft.getWindow().getScreenWidth();
+        double y = this.minecraft.mouseHandler.ypos() * (double) this.minecraft.getWindow().getGuiScaledHeight() / (double) this.minecraft.getWindow().getScreenHeight();
+        for (int i = 0; i < 4; i++) {
+            if (this.buttons[i] != null && this.buttons[i].isMouseOver(x, y)) {
+                this.buttons[i].onSelectedTick();
+            }
+        }
     }
 
     @Override
     public void render(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        //this.renderBackground(stack)  ;
+        this.renderBackground(stack);
         this.setFocused(null);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, LOCATION);
-        int i = this.width / 2;
-        int j = this.height / 2;
 
-
-        float deltaX = mouseX - i;
-        float deltaY = mouseY - j;
-        float angle = (float)Math.atan2(deltaY, deltaX) * Mth.RAD_TO_DEG;
-
-        if (this.buttons[0] != null) this.blit(stack, (this.width - 27) / 2, (this.height - 27) / 2 - POINTER_DISTANCE, Mth.degreesDifferenceAbs(angle, -90) < 45 ? 27 : 0, 0, 27, 27);
-        if (this.buttons[1] != null) this.blit(stack, (this.width - 27) / 2 + POINTER_DISTANCE, (this.height - 27) / 2, Mth.degreesDifferenceAbs(angle, 0) < 45 ? 27 : 0, 27, 27, 27);
-        if (this.buttons[2] != null) this.blit(stack, (this.width - 27) / 2, (this.height - 27) / 2 + POINTER_DISTANCE, Mth.degreesDifferenceAbs(angle, 90) < 45 ? 27 : 0, 54, 27, 27);
-        if (this.buttons[3] != null) this.blit(stack, (this.width - 27) / 2 - POINTER_DISTANCE, (this.height - 27) / 2, Mth.degreesDifferenceAbs(angle, 180) < 45 ? 27 : 0, 81, 27, 27);
+        if (this.buttons[0] != null) this.blit(stack, (this.width - 27) / 2, (this.height - 27) / 2 - POINTER_DISTANCE, this.buttons[0].isMouseOver(mouseX, mouseY) ? 27 : 0, 0, 27, 27);
+        if (this.buttons[1] != null) this.blit(stack, (this.width - 27) / 2 + POINTER_DISTANCE, (this.height - 27) / 2, this.buttons[1].isMouseOver(mouseX, mouseY) ? 27 : 0, 27, 27, 27);
+        if (this.buttons[2] != null) this.blit(stack, (this.width - 27) / 2, (this.height - 27) / 2 + POINTER_DISTANCE, this.buttons[2].isMouseOver(mouseX, mouseY) ? 27 : 0, 54, 27, 27);
+        if (this.buttons[3] != null) this.blit(stack, (this.width - 27) / 2 - POINTER_DISTANCE, (this.height - 27) / 2, this.buttons[3].isMouseOver(mouseX, mouseY) ? 27 : 0, 81, 27, 27);
 
         super.render(stack, mouseX, mouseY, partialTick);
 
         if (this instanceof EntityStaffScreen entityStaffScreen) {
-            renderEntity(entityStaffScreen.target, this.width * 0.5D - 0.5D, this.height * 0.5D, partialTick);
+            this.renderEntity(entityStaffScreen.target, this.width * 0.5D - 0.5D, this.height * 0.5D, partialTick);
         } else if (this instanceof BlockStaffScreen blockStaffScreen) {
-            BlockState state = this.player.level.getBlockState(blockStaffScreen.getContext().getBlockPos());
-            renderSingleBlock(state, this.width * 0.5D - 0.5D, this.height * 0.5D, partialTick, this.player.tickCount);
+            this.renderSingleBlock(this.player.level.getBlockState(blockStaffScreen.getContext().getBlockPos()), this.width * 0.5D - 0.5D, this.height * 0.5D, partialTick);
         }
+
+        //this.font.drawShadow(stack, Component.literal("Command Minions"), 10.0F, 10.0F, ChatFormatting.DARK_RED.getColor());
     }
 
-    public static void renderSingleBlock(BlockState state, double x, double y, float partialTick, int time) {
+    @SuppressWarnings("UnstableApiUsage")
+    public void renderBackground(PoseStack stack) {
+        int rgb = 16;
+
+        float mul = this.shade * 0.5F;
+        int o1 = (int)(192.0F * mul);
+        int o2 = (int)(208.0F * mul);
+
+        int i2 = (o1 << 24) | (rgb << 16) | (rgb << 8) | rgb;
+        int j2 = (o2 << 24) | (rgb << 16) | (rgb << 8) | rgb;
+
+        this.fillGradient(stack, 0, 0, this.width, this.height, i2, j2);
+        MinecraftForge.EVENT_BUS.post(new ScreenEvent.BackgroundRendered(this, stack));
+    }
+
+    public void renderSingleBlock(BlockState state, double x, double y, float partialTick) {
         BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
 
         float scale = 0.85F * 26.0F;
-        y += 12.0F;
-        float spin = (time + partialTick) * 0.15F;
-        float tilt = (float)Math.sin(spin * 0.45F) * 4.0F;
-        scale *= (Math.cos(spin * 0.5F) + 1.0F) * 0.01F + 0.98F;
+        float offset = 12.0F;
+        y += offset;
+        float spin = (this.time + partialTick) * 0.15F;
+        float realTilt = (this.realTime + partialTick) * 0.15F;
+        float tilt = (float)Math.sin(realTilt * 0.45F) * 4.0F;
+        scale *= (Math.cos(realTilt * 0.5F) + 1.0F) * 0.01F + 0.98F;
 
         PoseStack poseStack = RenderSystem.getModelViewStack();
         poseStack.pushPose();
@@ -242,7 +301,6 @@ public class MastersStaffScreen extends Screen {
         poseStack1.translate(0.0D, 0.0D, 1000.0D);
         poseStack1.mulPose(Vector3f.YP.rotationDegrees(spin * 8.0F));
         poseStack1.pushPose();
-        double offset = 12.0D;
         poseStack1.translate(offset, 0.0D, -offset);
         poseStack1.scale(scale, scale, scale);
         Quaternion quaternion = Vector3f.ZP.rotationDegrees(180.0F);
@@ -285,16 +343,17 @@ public class MastersStaffScreen extends Screen {
     }
 
     @SuppressWarnings("deprecation")
-    public static void renderEntity(Entity entity, double x, double y, float partialTick) {
+    public void renderEntity(Entity entity, double x, double y, float partialTick) {
         // VARIABLES
         boolean livingFlag = entity instanceof LivingEntity;
         float verticalScale = entity.getBbHeight();
         float flatScale = entity.getBbWidth();
         float scale = (livingFlag ? (float)Math.sqrt((Math.min(flatScale / verticalScale, verticalScale / flatScale) + 0.5D) * 0.5D) : 0.85F) * 26.0F;
         y += livingFlag ? (1.5D * verticalScale) + 12.0F : 12.0F;
-        float spin = (entity.tickCount + partialTick) * 0.15F;
-        float tilt = (float)Math.sin(spin * 0.45F) * 4.0F;
-        scale *= (Math.cos(spin * 0.5F) + 1.0F) * 0.01F + 0.98F;
+        float spin = (this.time + partialTick) * 0.15F;
+        float realTilt = (this.realTime + partialTick) * 0.15F;
+        float tilt = (float)Math.sin(realTilt * 0.45F) * 4.0F;
+        scale *= (Math.cos(realTilt * 0.5F) + 1.0F) * 0.01F + 0.98F;
 
         PoseStack poseStack = RenderSystem.getModelViewStack();
         poseStack.pushPose();
@@ -347,14 +406,28 @@ public class MastersStaffScreen extends Screen {
         Lighting.setupFor3DItems();
     }
 
+    public boolean isShiftKeyDown() {
+        return InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), 340) || InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), 344);
+    }
+
     public static class EntityStaffScreen extends MastersStaffScreen {
         public final Entity target;
         public final boolean hostile;
+        public final SoundEvent ambientSound;
+        public final float soundVolume;
 
         public EntityStaffScreen(LocalPlayer player, EntityHitResult context, boolean hostile) {
             super(player, context);
             this.target = context.getEntity();
             this.hostile = hostile;
+
+            if (this.target instanceof Mob mob) {
+                this.ambientSound = MinReflections.getAmbientSound(mob);
+                this.soundVolume = MinReflections.getSoundVolume(mob);
+            } else {
+                this.ambientSound = null;
+                this.soundVolume = 1.0F;
+            }
         }
 
         @Override

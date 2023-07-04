@@ -45,9 +45,10 @@ public class EnactOrderGoal extends Goal {
             this.owner = living;
             Optional<IMasterCapability> oma = living.getCapability(CommonRegistry.MASTER_CAPABILITY).resolve();
             if (oma.isPresent()) {
-                AbstractOrder order = oma.get().getOrder();
-                if (order == null) return false;
                 this.masterCapability = oma.get();
+                if (this.masterCapability.isPaused()) return false;
+                AbstractOrder order = this.masterCapability.getOrder();
+                if (order == null) return false;
                 this.order = order;
                 return this.order.goalCanUse(this);
             }
@@ -57,6 +58,7 @@ public class EnactOrderGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
+        if (this.masterCapability.isPaused()) return false;
         if (this.minion.sittingOrRiding() || this.minion.getControllingPassenger() != null) return false;
         return this.order == this.masterCapability.getOrder() && this.order.goalCanContinueToUse(this);
     }

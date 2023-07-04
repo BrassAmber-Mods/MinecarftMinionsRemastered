@@ -1,25 +1,25 @@
-package io.github.jodlodi.minions.client.gui;
+package io.github.jodlodi.minions.client.gui.buttons;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
+import io.github.jodlodi.minions.client.gui.MastersStaffScreen;
 import io.github.jodlodi.minions.minion.Minion;
 import io.github.jodlodi.minions.network.SitPacket;
 import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class SitButton extends MastersButton {
+public class SitButton extends AbstractMastersButton {
     protected final IMasterCapability capability;
 
     public SitButton(int x, int y, MastersStaffScreen.EntityStaffScreen screen, IMasterCapability capability) {
@@ -59,7 +59,7 @@ public class SitButton extends MastersButton {
     }
 
     @Override
-    protected List<? extends FormattedCharSequence> getTooltip() {
-        return List.of(Component.literal("Sit").withStyle(ChatFormatting.BLUE).getVisualOrderText());
+    protected MutableComponent getName() {
+        return Component.literal("Sit").withStyle(ChatFormatting.BLUE);
     }
 }

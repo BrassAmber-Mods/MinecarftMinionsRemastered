@@ -6,6 +6,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Position;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,17 +26,20 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class MinUtil {
+
     public static final BlockState BLACKSTONE = Blocks.BLACKSTONE.defaultBlockState();
     public static final BlockState GILDED_BLACKSTONE = Blocks.GILDED_BLACKSTONE.defaultBlockState();
 
@@ -82,36 +87,56 @@ public class MinUtil {
     }
 
     public static void particleAtBorders(RandomSource random, double y, Level level, int minX, int maxX, int minZ, int maxZ) {
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, minX, y, minZ, 0.0D, 0.0D, 0.0D);
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, minX, y, maxZ, 0.0D, 0.0D, 0.0D);
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, maxX, y, minZ, 0.0D, 0.0D, 0.0D);
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, maxX, y, maxZ, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, minX, y, minZ, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, minX, y, maxZ, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, maxX, y, minZ, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, maxX, y, maxZ, 0.0D, 0.0D, 0.0D);
 
         for (int x = minX; x <= maxX - 1; x++) {
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, minZ, 0.0D, 0.0D, 0.0D);
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, maxZ, 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, minZ, 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, maxZ, 0.0D, 0.0D, 0.0D);
         }
 
         for (int z = minZ; z <= maxZ - 1; z++) {
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, minX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, maxX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, minX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, maxX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
         }
     }
 
     public static void particleAtWall(RandomSource random, double constant, Level level, boolean axis, int minXz, int maxXz, int minY, int maxY) {
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? minXz : constant, minY, axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? minXz : constant, maxY, axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, minY, axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
-        level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, maxY, axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, axis ? minXz : constant, minY, axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, axis ? minXz : constant, maxY, axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, minY, axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+        level.addParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, maxY, axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
 
         for (int xz = minXz; xz <= maxXz - 1; xz++) {
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, minY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, maxY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, minY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, maxY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
         }
 
         for (int y = minY; y <= maxY - 1; y++) {
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? minXz : constant, y + random.nextDouble(), axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
-            level.addAlwaysVisibleParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, y + random.nextDouble(), axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, axis ? minXz : constant, y + random.nextDouble(), axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
+            level.addParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, y + random.nextDouble(), axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    public static void particlesAroundTag(RandomSource random, Level level, BlockPos min, BlockPos max, Predicate<BlockState> predicate) {
+        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
+            if (random.nextInt(10) == 0 && predicate.test(level.getBlockState(pos))) {
+                for (Direction dir : Direction.values()) {
+                    if (level.getBlockState(pos.relative(dir)).getMaterial().isReplaceable()) {
+                        double x = (double)dir.getStepX() * 0.5D;
+                        if (x == 0.0D) x = random.nextDouble() - 0.5D;
+                        double y = (double)dir.getStepY() * 0.5D;
+                        if (y == 0.0D) y = random.nextDouble() - 0.5D;
+                        double z = (double)dir.getStepZ() * 0.5D;
+                        if (z == 0.0D) z = random.nextDouble() - 0.5D;
+
+                        Vec3 vec3 = Vec3.atCenterOf(pos).add(x, y, z);
+                        level.addParticle(ParticleTypes.SMOKE, vec3.x, vec3.y, vec3.z, 0.0D, 0.0D, 0.0D);
+                    }
+                }
+            }
         }
     }
 
@@ -189,5 +214,17 @@ public class MinUtil {
 
     public static void stoneUp(BlockPos pos, Level level) {
         level.setBlock(pos, level.random.nextInt(100) == 1 ? GILDED_BLACKSTONE : BLACKSTONE, 3);
+    }
+
+    public static double airDistanceSqr(Position pos1, Position pos2) {
+        double x = pos1.x() - pos2.x();
+        double z = pos1.z() - pos2.z();
+        return x * x + z * z;
+    }
+
+    public static double airDistanceSqr(Vec3i pos1, Vec3i pos2) {
+        double x = pos1.getX() - pos2.getX();
+        double z = pos1.getZ() - pos2.getZ();
+        return x * x + z * z;
     }
 }

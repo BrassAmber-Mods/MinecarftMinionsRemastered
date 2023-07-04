@@ -7,52 +7,54 @@ import io.github.jodlodi.minions.minion.Minion;
 import io.github.jodlodi.minions.minion.goals.EnactOrderGoal;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
-public class MineAheadOrder extends AbstractOrder {
-    public static final ResourceLocation ID = MinionsRemastered.locate("mine_ahead_order");
+public class ChopOrder extends AbstractOrder {
+    public static final ResourceLocation ID = MinionsRemastered.locate("chop_order");
+    public static final Predicate<BlockState> DEFAULT_CHOP = (blockState) -> blockState.is(BlockTags.LOGS);
 
     //Stored variables
     private final BlockPos minPos;
     private final BlockPos maxPos;
-    private final Direction direction;
-    private final int depth;
+    private final Block predicate;
 
     //Temp variables
     private final Map<Integer, BlockPos> mineMap = new HashMap<>();
     private final Map<Integer, Float> breakMap = new HashMap<>();
-    private int current;
 
-    public MineAheadOrder(BlockPos minPos, BlockPos maxPos, Direction direction, int depth) {
+    public ChopOrder(BlockPos minPos, BlockPos maxPos, Block predicate) {
         this.minPos = minPos;
         this.maxPos = maxPos;
-        this.current = 0;
-        this.direction = direction;
-        this.depth = depth;
+        this.predicate = predicate;
     }
 
-    public MineAheadOrder(CompoundTag tag) {
+    public ChopOrder(CompoundTag tag) {
         this.minPos = BlockPos.of(tag.getLong("min"));
         this.maxPos = BlockPos.of(tag.getLong("max"));
-        this.current = tag.getInt("current");
-        this.direction = Direction.values()[tag.getInt("direction")];
-        this.depth = tag.getInt("depth");
+        this.predicate = tag.contains("predicate") ? ForgeRegistries.BLOCKS.getValue(ResourceLocation.tryParse(tag.getString("predicate"))) : null;
     }
 
     @Override
@@ -60,9 +62,7 @@ public class MineAheadOrder extends AbstractOrder {
         return Util.make(new CompoundTag(), compoundTag -> {
             compoundTag.putLong("min", this.minPos.asLong());
             compoundTag.putLong("max", this.maxPos.asLong());
-            compoundTag.putInt("current", this.current);
-            compoundTag.putInt("direction", this.direction.ordinal());
-            compoundTag.putInt("depth", this.depth);
+            if (this.predicate != null) compoundTag.putString("predicate", String.valueOf(ForgeRegistries.BLOCKS.getKey(this.predicate)));
         });
     }
 
@@ -103,12 +103,9 @@ public class MineAheadOrder extends AbstractOrder {
         LivingEntity owner = goal.getOwner();
 
         if (!this.mineMap.containsKey(id)) {
-            BlockPos one = this.minPos.relative(this.direction, this.current);
-            BlockPos two = this.maxPos.relative(this.direction, this.current);
-
             BlockPos closest = null;
-            for (BlockPos pos : BlockPos.betweenClosed(one, two)) {
-                if (MinUtil.isBlockBreakable(level.getBlockState(pos), level, pos, owner) && (closest == null || minion.distanceToSqr(Vec3.atCenterOf(pos)) < minion.distanceToSqr(Vec3.atCenterOf(closest)))) {
+            for (BlockPos pos : BlockPos.betweenClosed(this.minPos, this.maxPos)) {
+                if (this.isBlockBreakableDeluxe(level.getBlockState(pos), level, pos, owner) && (closest == null || MinUtil.airDistanceSqr(minion.position(), Vec3.atCenterOf(pos)) <= MinUtil.airDistanceSqr(minion.position(), Vec3.atCenterOf(closest)))) {
                     closest = new BlockPos(pos.getX(), pos.getY(), pos.getZ());
                 }
             }
@@ -119,28 +116,23 @@ public class MineAheadOrder extends AbstractOrder {
             this.mineMap.put(id, closest);
             this.breakMap.put(id, 0.0F);
         }
+
         BlockPos pos = this.mineMap.get(id);
 
-        if (pos.get(this.direction.getAxis()) != this.minPos.relative(this.direction, this.current).get(this.direction.getAxis())) {
-            this.mineMap.remove(id);
-            return;
-        }
-
         BlockState state = level.getBlockState(pos);
-        if (minion.tickCount % 5 == 0 && !MinUtil.isBlockBreakable(state, level, pos, owner)) {
+        if (minion.tickCount % 5 == 0 && !this.isBlockBreakableDeluxe(state, level, pos, owner)) {
             this.mineMap.remove(id);
             this.breakMap.put(id, 0.0F);
             return;
         }
 
-        minion.getLookControl().setLookAt(Vec3.atCenterOf(pos));
+        Vec3 center = Vec3.atBottomCenterOf(pos);
+        Vec3 minionPos = minion.position();
+        minion.getLookControl().setLookAt(center);
 
-        BlockPos destiny = pos.relative(this.direction, -1);
-        Vec3 centerDestiny = Vec3.atBottomCenterOf(destiny);
-
-        if (MinUtil.airDistanceSqr(centerDestiny, minion.position()) > 4.0D) {
+        if (MinUtil.airDistanceSqr(center, minionPos) > 4.0D) {
             this.breakMap.put(id, 0.0F);
-            navigation.moveTo(centerDestiny.x, centerDestiny.y, centerDestiny.z, goal.getSpeedModifier());
+            navigation.moveTo(center.x, center.y, center.z, goal.getSpeedModifier());
         } else if (!minion.getBlinking()) {
             minion.swing(InteractionHand.MAIN_HAND);
             navigation.stop();
@@ -151,18 +143,29 @@ public class MineAheadOrder extends AbstractOrder {
                 this.mineMap.remove(id);
                 this.breakMap.put(id, 0.0F);
                 level.destroyBlock(pos, true, owner);
-                MinUtil.blockLiquids(pos, level);
+                navigation.stop();
+
+                if (minionPos.y >= center.y) {
+                    BlockHitResult result = level.clip(new ClipContext(minion.getEyePosition(), center, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, minion));
+                    if (result.getType() != HitResult.Type.MISS) {
+                        minion.blink(center);
+                    }
+                } else minion.blink(center);
             } else {
                 level.destroyBlockProgress(minion.getId(), pos, (int)(breakProgress * 10.0F));
                 this.breakMap.put(id, breakProgress);
 
                 for (int i = 0; i < 4; i++) {
-                    if (i != id && this.mineMap.get(i) != null && this.mineMap.get(id) != null &&this.mineMap.get(i).equals(this.mineMap.get(id))) {
+                    if (i != id && this.mineMap.get(i) != null && this.mineMap.get(id) != null && this.mineMap.get(i).equals(this.mineMap.get(id))) {
                         this.breakMap.put(i, breakProgress);
                     }
                 }
             }
         }
+    }
+
+    protected boolean isBlockBreakableDeluxe(BlockState state, Level level, BlockPos pos, Entity destroyer) {
+        return this.getPredicate().test(state) && MinUtil.isBlockBreakable(state, level, pos, destroyer);
     }
 
     @Override
@@ -174,25 +177,19 @@ public class MineAheadOrder extends AbstractOrder {
             }
 
             if (allEmpty) {
-                BlockPos one = this.minPos.relative(this.direction, this.current);
-                BlockPos two = this.maxPos.relative(this.direction, this.current);
-
-                boolean flag = true;
-
-                for (BlockPos pos : BlockPos.betweenClosed(one, two)) {
-                    if (MinUtil.isBlockBreakable(level.getBlockState(pos), level, pos, player)) flag = false;
+                for (BlockPos pos : BlockPos.betweenClosed(this.minPos, this.maxPos)) {
+                    if (this.isBlockBreakableDeluxe(level.getBlockState(pos), level, pos, player)) {
+                        return;
+                    }
                 }
-
-                if (flag) {
-                    this.current += 1;
-                    if (this.current >= this.depth || !level.isInWorldBounds(one.relative(this.direction))) masterCapability.setOrder(null);
-                }
+                masterCapability.setOrder(null);
             }
         } else {
-            boolean axis = this.direction.getAxis() == Direction.Axis.Z;
-            int mul = (axis ? this.direction.getStepZ() : this.direction.getStepX()) == -1 ? 1 : 0;
-            MinUtil.particleAtWall(player.getRandom(), (axis ? this.minPos.getZ() : this.minPos.getX()) + mul, level, axis, axis ? this.minPos.getX() : this.minPos.getZ(), (axis ? this.maxPos.getX() : this.maxPos.getZ()) + 1, this.minPos.getY(), this.maxPos.getY() + 1);
+            MinUtil.particlesAroundTag(player.getRandom(), level, this.minPos, this.maxPos, this.getPredicate());
         }
     }
 
+    public Predicate<BlockState> getPredicate() {
+        return this.predicate != null ? (blockState) -> blockState.is(this.predicate) : DEFAULT_CHOP;
+    }
 }

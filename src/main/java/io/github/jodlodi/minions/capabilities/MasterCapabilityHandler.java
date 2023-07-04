@@ -29,6 +29,7 @@ public class MasterCapabilityHandler implements IMasterCapability {
     private Player player;
     private AbstractOrder order;
     private boolean synced = false;
+    private boolean paused = false;
 
     private BlockPos containerBlock = null;
     private UUID containerEntity = null;//TODO
@@ -119,6 +120,7 @@ public class MasterCapabilityHandler implements IMasterCapability {
     @Override
     public void setOrder(@Nullable AbstractOrder order) {
         this.order = order;
+        this.paused = false;
         if (!this.player.level.isClientSide) this.sendUpdatePacket();
     }
 
@@ -174,6 +176,16 @@ public class MasterCapabilityHandler implements IMasterCapability {
     }
 
     @Override
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
+    @Override
+    public boolean isPaused() {
+        return this.paused;
+    }
+
+    @Override
     public void sendUpdatePacket() {
         PacketRegistry.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> this.player), new MasterPacket(this.player, this));
     }
@@ -203,6 +215,8 @@ public class MasterCapabilityHandler implements IMasterCapability {
             if (this.containerEntity != null) {
                 tag.putUUID("ContainerUUID", this.containerEntity);
             }
+
+            tag.putBoolean("Paused", this.paused);
         });
     }
 
@@ -231,5 +245,7 @@ public class MasterCapabilityHandler implements IMasterCapability {
         this.containerBlock = tag.contains("ChestPos") ? BlockPos.of(tag.getLong("ChestPos")) : null;
 
         this.containerEntity = tag.contains("ContainerUUID") ? tag.getUUID("ContainerUUID") : null;
+
+        this.paused = tag.getBoolean("Paused");
     }
 }

@@ -10,12 +10,14 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class MineDownButtonPacket extends AbstractServerboundPacket {
-	private final BlockPos minPos;
-	private final BlockPos maxPos;
-	private final int startDir;
-	private final boolean stairs;
+	protected final boolean paused;
+	protected final BlockPos minPos;
+	protected final BlockPos maxPos;
+	protected final int startDir;
+	protected final int stairs;
 
-	public MineDownButtonPacket(BlockPos minPos, BlockPos maxPos, int startDir, boolean stairs) {
+	public MineDownButtonPacket(boolean paused, BlockPos minPos, BlockPos maxPos, int startDir, int stairs) {
+		this.paused = paused;
 		this.minPos = minPos;
 		this.maxPos = maxPos;
 		this.startDir = startDir;
@@ -23,22 +25,25 @@ public class MineDownButtonPacket extends AbstractServerboundPacket {
 	}
 
 	public MineDownButtonPacket(FriendlyByteBuf buf) {
+		this.paused = buf.readBoolean();
 		this.minPos = buf.readBlockPos();
 		this.maxPos = buf.readBlockPos();
 		this.startDir = buf.readInt();
-		this.stairs = buf.readBoolean();
+		this.stairs = buf.readInt();
 	}
 
 	@Override
 	public void encode(FriendlyByteBuf buf) {
+		buf.writeBoolean(this.paused);
 		buf.writeBlockPos(this.minPos);
 		buf.writeBlockPos(this.maxPos);
 		buf.writeInt(this.startDir);
-		buf.writeBoolean(this.stairs);
+		buf.writeInt(this.stairs);
 	}
 
 	@Override
 	void execute(ServerPlayer player, IMasterCapability capability) {
 		capability.setOrder(new MineDownOrder(this.minPos, this.maxPos, this.startDir, this.stairs));
+		capability.setPaused(this.paused);
 	}
 }

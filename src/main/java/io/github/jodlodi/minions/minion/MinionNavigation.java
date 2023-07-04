@@ -40,11 +40,10 @@ public class MinionNavigation extends GroundPathNavigation {
         if (minion.canBlink() && minion.isEnactingOrder()) {
             Optional.ofNullable(this.getPath()).ifPresent(path -> {
                 if (this.shouldBlink(path)) {
-                    BlockPos nearbyPos = MinUtil.randomOpenNearbyOrAboveOrBelow(path.getTarget(), level);
-                    if (nearbyPos != null) {
-                        minion.blink(nearbyPos);
+                    Optional.ofNullable(MinUtil.randomOpenNearbyOrAboveOrBelow(path.getTarget(), level)).ifPresent(pos -> {
+                        minion.blink(pos);
                         this.stop();
-                    }
+                    });
                 }
             });
         }
@@ -56,7 +55,7 @@ public class MinionNavigation extends GroundPathNavigation {
         if (!path.canReach() && roll % 25 == 1) return true;
         Vec3 pos = this.mob.position();
         BlockPos blockPos = this.mob.blockPosition();
-        boolean flag = pos.equals(this.lastPos) && roll <= 2;
+        boolean flag = pos.equals(this.lastPos) && path.getDistToTarget() > 4.0F;
         this.lastPos = pos;
         if (!flag) flag = blockPos.equals(this.lastBlockPos) && roll == 1;
         this.lastBlockPos = blockPos;

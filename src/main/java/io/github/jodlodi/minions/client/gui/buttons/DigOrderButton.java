@@ -1,8 +1,9 @@
-package io.github.jodlodi.minions.client.gui;
+package io.github.jodlodi.minions.client.gui.buttons;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.jodlodi.minions.MinUtil;
+import io.github.jodlodi.minions.client.gui.MastersStaffScreen;
 import io.github.jodlodi.minions.network.MineDownButtonPacket;
 import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.ChatFormatting;
@@ -14,11 +15,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.TickEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
@@ -26,14 +26,14 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class DigButton extends AdjustableMastersButton {
+public class DigOrderButton extends AbstractAdjustableOrderButton {
     protected int size;
-    protected boolean stairs;
+    protected int stairs;
 
-    public DigButton(int x, int y, MastersStaffScreen.BlockStaffScreen screen) {
-        super(x, y, screen, true, true);
+    public DigOrderButton(int x, int y, MastersStaffScreen.BlockStaffScreen screen) {
+        super(x, y, screen, true, true, true);
         this.size = 7;
-        this.stairs = true;
+        this.stairs = 1;
     }
 
     @Override
@@ -97,13 +97,13 @@ public class DigButton extends AdjustableMastersButton {
             index = 3;
         }
 
-        PacketRegistry.CHANNEL.sendToServer(new MineDownButtonPacket(minPos, maxPos, index, this.stairs));
+        PacketRegistry.CHANNEL.sendToServer(new MineDownButtonPacket(this.screen.isShiftKeyDown(), minPos, maxPos, index, this.stairs));
 
         this.screen.onClose();
     }
 
     @Override
-    public void onSelectedTick(TickEvent.ClientTickEvent event) {
+    public void onSelectedTick() {
         MastersStaffScreen.BlockStaffScreen screen = this.getScreen();
         LocalPlayer player = screen.getPlayer();
         float partialTick = Minecraft.getInstance().getPartialTick();
@@ -134,25 +134,29 @@ public class DigButton extends AdjustableMastersButton {
     }
 
     @Override
-    protected List<? extends FormattedCharSequence> getTooltip() {
-        return List.of(
-                Component.literal("Dig Mineshaft").withStyle(ChatFormatting.BLUE).getVisualOrderText(),
-                Component.literal("Size: " + this.size).withStyle(ChatFormatting.GRAY).getVisualOrderText(),
-                Component.literal(this.stairs ? "With stairs" : "Without stairs").withStyle(ChatFormatting.GRAY).getVisualOrderText());
-    }
-
-    @Override
     protected void onLeftPress() {
-        if (this.size > 1) this.size--;
+        this.size = Math.max(1, this.size - (this.screen.isShiftKeyDown() ? 5 : 1));
     }
 
     @Override
     protected void onTogglePress() {
-        this.stairs = !this.stairs;
+        this.stairs = (this.stairs + (this.screen.isShiftKeyDown() ? 2 : 1)) % 3;
     }
 
     @Override
     protected void onRightPress() {
-        this.size++;
+        this.size = Math.min(32, this.size + (this.screen.isShiftKeyDown() ? 5 : 1));
+    }
+
+    @Override
+    protected MutableComponent getName() {
+        return Component.literal("Dig Mineshaft").withStyle(ChatFormatting.BLUE);
+    }
+
+    @Override
+    protected List<MutableComponent> getAdjustableTooltip() {
+        return List.of(
+                Component.literal("Size: " + this.size).withStyle(ChatFormatting.GRAY),
+                Component.literal(this.stairs > 0 ? this.stairs == 1 ? "With stairs" : "Counter stairs" : "Without stairs").withStyle(ChatFormatting.GRAY));
     }
 }

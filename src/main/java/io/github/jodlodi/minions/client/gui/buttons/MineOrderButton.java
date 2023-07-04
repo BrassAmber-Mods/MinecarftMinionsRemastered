@@ -1,8 +1,9 @@
-package io.github.jodlodi.minions.client.gui;
+package io.github.jodlodi.minions.client.gui.buttons;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.jodlodi.minions.MinUtil;
+import io.github.jodlodi.minions.client.gui.MastersStaffScreen;
 import io.github.jodlodi.minions.network.MineAheadButtonPacket;
 import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.ChatFormatting;
@@ -13,11 +14,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.TickEvent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
@@ -25,14 +25,14 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class MineButton extends AdjustableMastersButton {
+public class MineOrderButton extends AbstractAdjustableOrderButton {
     protected int depth;
-    protected boolean small;
+    protected int scale;
 
-    public MineButton(int x, int y, MastersStaffScreen.BlockStaffScreen screen) {
-        super(x, y, screen, true, true);
+    public MineOrderButton(int x, int y, MastersStaffScreen.BlockStaffScreen screen) {
+        super(x, y, screen, true, true, true);
         this.depth = 16;
-        this.small = false;
+        this.scale = 1;
     }
 
     @Override
@@ -66,16 +66,16 @@ public class MineButton extends AdjustableMastersButton {
         Direction.Axis clockAxis = dir.getClockWise().getAxis();
 
         BlockPos context = screen.getContext().getBlockPos();
-        BlockPos minPos = this.small ? context.below() : context.below().relative(clockAxis, -1);
-        BlockPos maxPos = this.small ? new BlockPos(context) : context.above().relative(clockAxis, 1);
+        BlockPos minPos = this.scale == 0 ? context.below() : context.below(this.scale).relative(clockAxis, -this.scale);
+        BlockPos maxPos = this.scale == 0 ? new BlockPos(context) : context.above(this.scale).relative(clockAxis, this.scale);
 
-        PacketRegistry.CHANNEL.sendToServer(new MineAheadButtonPacket(minPos, maxPos, dir, this.depth));
+        PacketRegistry.CHANNEL.sendToServer(new MineAheadButtonPacket(this.screen.isShiftKeyDown(), minPos, maxPos, dir, this.depth));
 
         this.screen.onClose();
     }
 
     @Override
-    public void onSelectedTick(TickEvent.ClientTickEvent event) {
+    public void onSelectedTick() {
         MastersStaffScreen.BlockStaffScreen screen = this.getScreen();
         LocalPlayer player = screen.getPlayer();
         ClientLevel level = player.clientLevel;
@@ -84,8 +84,8 @@ public class MineButton extends AdjustableMastersButton {
         Direction.Axis clockAxis = dir.getClockWise().getAxis();
 
         BlockPos context = screen.getContext().getBlockPos();
-        BlockPos minPos = this.small ? context.below() : context.below().relative(clockAxis, -1);
-        BlockPos maxPos = this.small ? new BlockPos(context) : context.above().relative(clockAxis, 1);
+        BlockPos minPos = this.scale == 0 ? context.below() : context.below(this.scale).relative(clockAxis, -this.scale);
+        BlockPos maxPos = this.scale == 0 ? new BlockPos(context) : context.above(this.scale).relative(clockAxis, this.scale);
 
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
             if (player.getRandom().nextInt(3) == 0) {
@@ -103,25 +103,29 @@ public class MineButton extends AdjustableMastersButton {
     }
 
     @Override
-    protected List<? extends FormattedCharSequence> getTooltip() {
-        return List.of(
-                Component.literal("Mine Mineshaft").withStyle(ChatFormatting.BLUE).getVisualOrderText(),
-                Component.literal("Depth: " + this.depth).withStyle(ChatFormatting.GRAY).getVisualOrderText(),
-                Component.literal(this.small ? "Small mine" : "Large mine").withStyle(ChatFormatting.GRAY).getVisualOrderText());
-    }
-
-    @Override
     protected void onLeftPress() {
-        if (this.depth > 1) this.depth--;
+        this.depth = Math.max(1, this.depth - (this.screen.isShiftKeyDown() ? 5 : 1));
     }
 
     @Override
     protected void onTogglePress() {
-        this.small = !this.small;
+        this.scale = (this.scale + (this.screen.isShiftKeyDown() ? 2 : 1)) % 3;
     }
 
     @Override
     protected void onRightPress() {
-        this.depth++;
+        this.depth = Math.min(Integer.MAX_VALUE, this.depth + (this.screen.isShiftKeyDown() ? 5 : 1));
+    }
+
+    @Override
+    protected MutableComponent getName() {
+        return Component.literal("Mine Mineshaft").withStyle(ChatFormatting.BLUE);
+    }
+
+    @Override
+    protected List<MutableComponent> getAdjustableTooltip() {
+        return List.of(
+                Component.literal("Depth: " + this.depth).withStyle(ChatFormatting.GRAY),
+                Component.literal(this.scale == 0 ? "Small mine" : this.scale == 1 ? "Medium mine" : "Large mine").withStyle(ChatFormatting.GRAY));
     }
 }

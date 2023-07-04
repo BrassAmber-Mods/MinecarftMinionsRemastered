@@ -16,5 +16,7 @@ public class OrderRegistry {
         ORDERS.put(FollowMasterOrder.ID, FollowMasterOrder::new);
         ORDERS.put(CarryLivingOrder.ID, CarryLivingOrder::new);
         ORDERS.put(MineAheadOrder.ID, MineAheadOrder::new);
+        ORDERS.put(ChopOrder.ID, ChopOrder::new);
+        ORDERS.put(HoeWartOrder.ID, HoeWartOrder::new);
     }
 }

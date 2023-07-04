@@ -1,23 +1,32 @@
-package io.github.jodlodi.minions.client.gui;
+package io.github.jodlodi.minions.client.gui.buttons;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import io.github.jodlodi.minions.client.gui.MastersStaffScreen;
+import net.minecraft.ChatFormatting;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 @ParametersAreNonnullByDefault
-public abstract class AdjustableMastersButton extends MastersButton {
+@MethodsReturnNonnullByDefault
+public abstract class AbstractAdjustableOrderButton extends AbstractMastersButton {
     protected final boolean leftAndRight;
     protected final boolean toggle;
+    protected final boolean pausable;
 
-
-    public AdjustableMastersButton(int x, int y, MastersStaffScreen screen, boolean leftAndRight, boolean toggle) {
+    public AbstractAdjustableOrderButton(int x, int y, MastersStaffScreen screen, boolean leftAndRight, boolean toggle, boolean pausable) {
         super(x, y, screen);
         this.leftAndRight = leftAndRight;
         this.toggle = toggle;
+        this.pausable = pausable;
     }
 
     @Override
@@ -49,6 +58,7 @@ public abstract class AdjustableMastersButton extends MastersButton {
 
     @Override
     protected void renderExtra(PoseStack stack, int mouseX, int mouseY, float partialTick) {
+        super.renderExtra(stack, mouseX, mouseY, partialTick);
         RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
 
         if (this.leftAndRight) {
@@ -58,6 +68,7 @@ public abstract class AdjustableMastersButton extends MastersButton {
             boolean right = this.isMouseOverRightMini(mouseX, mouseY);
             this.blit(stack, this.x + 13, this.y + 11, 230, right ? 5 : 0, 5, 5);
         }
+
         if (this.toggle) {
             boolean toggle = this.isMouseOverToggleMini(mouseX, mouseY);
             this.blit(stack, this.x + 7, this.y + 13, 235, toggle ? 5 : 0, 5, 5);
@@ -75,4 +86,13 @@ public abstract class AdjustableMastersButton extends MastersButton {
     public boolean isMouseOverRightMini(int mouseX, int mouseY) {
         return this.leftAndRight && this.active && this.visible && this.isMouseOver(mouseX, mouseY) && mouseX >= this.x + 13 && mouseY >= this.y + 11;
     }
+
+    @Override
+    protected final List<MutableComponent> getTooltip() {
+        List<MutableComponent> list = new ArrayList<>(this.getAdjustableTooltip());
+        if (this.pausable) list.add(Component.literal("[SHIFT]").withStyle(this.screen.isShiftKeyDown() ? ChatFormatting.AQUA : ChatFormatting.DARK_RED).append(Component.literal(" Preview mode").withStyle(ChatFormatting.DARK_GRAY)));
+        return list;
+    }
+
+    abstract protected List<MutableComponent> getAdjustableTooltip();
 }

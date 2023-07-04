@@ -1,36 +1,36 @@
 package io.github.jodlodi.minions.network;
 
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
-import io.github.jodlodi.minions.orders.MineAheadOrder;
+import io.github.jodlodi.minions.orders.HoeWartOrder;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Block;
+import net.minecraftforge.registries.ForgeRegistries;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Objects;
 
 @ParametersAreNonnullByDefault
-public class MineAheadButtonPacket extends AbstractServerboundPacket {
+public class HoeWartButtonPacket extends AbstractServerboundPacket {
 	protected final boolean paused;
 	protected final BlockPos minPos;
 	protected final BlockPos maxPos;
-	protected final int direction;
-	protected final int depth;
+	protected final Block predicate;
 
-	public MineAheadButtonPacket(boolean paused, BlockPos minPos, BlockPos maxPos, Direction direction, int depth) {
+	public HoeWartButtonPacket(boolean paused, BlockPos minPos, BlockPos maxPos, @Nullable Block predicate) {
 		this.paused = paused;
 		this.minPos = minPos;
 		this.maxPos = maxPos;
-		this.direction = direction.ordinal();
-		this.depth = depth;
+		this.predicate = predicate;
 	}
 
-	public MineAheadButtonPacket(FriendlyByteBuf buf) {
+	public HoeWartButtonPacket(FriendlyByteBuf buf) {
 		this.paused = buf.readBoolean();
 		this.minPos = buf.readBlockPos();
 		this.maxPos = buf.readBlockPos();
-		this.direction = buf.readInt();
-		this.depth = buf.readInt();
+		this.predicate = buf.readBoolean() ? ForgeRegistries.BLOCKS.getValue(buf.readResourceLocation()) : null;
 	}
 
 	@Override
@@ -38,13 +38,15 @@ public class MineAheadButtonPacket extends AbstractServerboundPacket {
 		buf.writeBoolean(this.paused);
 		buf.writeBlockPos(this.minPos);
 		buf.writeBlockPos(this.maxPos);
-		buf.writeInt(this.direction);
-		buf.writeInt(this.depth);
+
+		boolean more = this.predicate != null;
+		buf.writeBoolean(more);
+		if (more) buf.writeResourceLocation(Objects.requireNonNull(ForgeRegistries.BLOCKS.getKey(this.predicate)));
 	}
 
 	@Override
 	void execute(ServerPlayer player, IMasterCapability capability) {
-		capability.setOrder(new MineAheadOrder(this.minPos, this.maxPos, Direction.values()[this.direction], this.depth));
+		capability.setOrder(new HoeWartOrder(this.minPos, this.maxPos, this.predicate));
 		capability.setPaused(this.paused);
 	}
 }
