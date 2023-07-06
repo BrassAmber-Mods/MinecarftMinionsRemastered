@@ -56,7 +56,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class MastersStaffScreen extends Screen {
-    public static final ResourceLocation LOCATION = MinionsRemastered.locate("textures/gui/minion.png");
+    public static final ResourceLocation TEXTURE_LOCATION = MinionsRemastered.locate("textures/gui/minion.png");
+    public static final ResourceLocation ALT_TEXTURE_LOCATION = MinionsRemastered.locate("textures/gui/alt.png");
     public static final int BUTTON_DISTANCE = 32;
     public static final int POINTER_DISTANCE = 8;
 
@@ -234,8 +235,9 @@ public class MastersStaffScreen extends Screen {
         double x = this.minecraft.mouseHandler.xpos() * (double) this.minecraft.getWindow().getGuiScaledWidth() / (double) this.minecraft.getWindow().getScreenWidth();
         double y = this.minecraft.mouseHandler.ypos() * (double) this.minecraft.getWindow().getGuiScaledHeight() / (double) this.minecraft.getWindow().getScreenHeight();
         for (int i = 0; i < 4; i++) {
-            if (this.buttons[i] != null && this.buttons[i].isMouseOver(x, y)) {
-                this.buttons[i].onSelectedTick();
+            if (this.buttons[i] != null) {
+                if (this.buttons[i].isMouseOver(x, y)) this.buttons[i].onSelectedTick();
+                else this.buttons[i].onUnSelectedTick();
             }
         }
     }
@@ -248,7 +250,7 @@ public class MastersStaffScreen extends Screen {
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, LOCATION);
+        RenderSystem.setShaderTexture(0, TEXTURE_LOCATION);
 
         if (this.buttons[0] != null) this.blit(stack, (this.width - 27) / 2, (this.height - 27) / 2 - POINTER_DISTANCE, this.buttons[0].isMouseOver(mouseX, mouseY) ? 27 : 0, 0, 27, 27);
         if (this.buttons[1] != null) this.blit(stack, (this.width - 27) / 2 + POINTER_DISTANCE, (this.height - 27) / 2, this.buttons[1].isMouseOver(mouseX, mouseY) ? 27 : 0, 27, 27, 27);

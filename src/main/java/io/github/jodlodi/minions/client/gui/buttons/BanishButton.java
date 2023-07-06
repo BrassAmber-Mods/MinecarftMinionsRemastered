@@ -1,7 +1,5 @@
 package io.github.jodlodi.minions.client.gui.buttons;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.jodlodi.minions.capabilities.IMasterCapability;
 import io.github.jodlodi.minions.client.gui.MastersStaffScreen;
 import io.github.jodlodi.minions.minion.Minion;
@@ -23,7 +21,7 @@ public class BanishButton extends AbstractMastersButton {
     protected final IMasterCapability capability;
 
     public BanishButton(int x, int y, MastersStaffScreen.EntityStaffScreen screen, IMasterCapability capability) {
-        super(x, y, screen);
+        super(x, y, 130, 0, screen);
         this.capability = capability;
     }
 
@@ -38,24 +36,6 @@ public class BanishButton extends AbstractMastersButton {
     @Override
     public MastersStaffScreen.EntityStaffScreen getScreen() {
         return (MastersStaffScreen.EntityStaffScreen)this.screen;
-    }
-
-    @Override
-    protected void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 130, 0, this.width, this.height);
-    }
-
-    @Override
-    protected void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 130, 19, this.width, this.height);
-    }
-
-    @Override
-    protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 130, 38, this.width, this.height);
     }
 
     @Override

@@ -22,8 +22,8 @@ public abstract class AbstractAdjustableOrderButton extends AbstractMastersButto
     protected final boolean toggle;
     protected final boolean pausable;
 
-    public AbstractAdjustableOrderButton(int x, int y, MastersStaffScreen screen, boolean leftAndRight, boolean toggle, boolean pausable) {
-        super(x, y, screen);
+    public AbstractAdjustableOrderButton(int x, int y, int textureX, int textureY, MastersStaffScreen screen, boolean leftAndRight, boolean toggle, boolean pausable) {
+        super(x, y, textureX, textureY, screen);
         this.leftAndRight = leftAndRight;
         this.toggle = toggle;
         this.pausable = pausable;
@@ -59,7 +59,7 @@ public abstract class AbstractAdjustableOrderButton extends AbstractMastersButto
     @Override
     protected void renderExtra(PoseStack stack, int mouseX, int mouseY, float partialTick) {
         super.renderExtra(stack, mouseX, mouseY, partialTick);
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
+        RenderSystem.setShaderTexture(0, this.getShaderTexture(mouseX, mouseY));
 
         if (this.leftAndRight) {
             boolean left = this.isMouseOverLeftMini(mouseX, mouseY);

@@ -8,24 +8,25 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class StopButtonPacket extends AbstractServerboundPacket {
+	protected final boolean shift;
 
-	public StopButtonPacket() {
-
+	public StopButtonPacket(boolean shift) {
+		this.shift = shift;
 	}
 
 	public StopButtonPacket(FriendlyByteBuf buf) {
-
+		this.shift = buf.readBoolean();
 	}
 
 	@Override
 	public void encode(FriendlyByteBuf buf) {
-
+		buf.writeBoolean(this.shift);
 	}
 
 	@Override
 	void execute(ServerPlayer player, IMasterCapability capability) {
 		//FIXME
-		capability.setPaused(!capability.isPaused());
-		//capability.setOrder(null);
+		if (this.shift) capability.setOrder(null);
+		else capability.setPaused(!capability.isPaused());
 	}
 }

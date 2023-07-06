@@ -1,7 +1,5 @@
 package io.github.jodlodi.minions.client.gui.buttons;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.jodlodi.minions.MinUtil;
 import io.github.jodlodi.minions.client.gui.MastersStaffScreen;
 import io.github.jodlodi.minions.network.ChopButtonPacket;
@@ -30,7 +28,7 @@ public class ChopOrderButton extends AbstractAdjustableOrderButton {
     protected boolean allLogs;
 
     public ChopOrderButton(int x, int y, MastersStaffScreen.BlockStaffScreen screen) {
-        super(x, y, screen, true, true, true);
+        super(x, y, 92, 57, screen, true, true, true);
         this.range = 12;
         this.allLogs = true;
     }
@@ -38,24 +36,6 @@ public class ChopOrderButton extends AbstractAdjustableOrderButton {
     @Override
     public MastersStaffScreen.BlockStaffScreen getScreen() {
         return (MastersStaffScreen.BlockStaffScreen)this.screen;
-    }
-
-    @Override
-    protected void renderBackground(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 92, 57, this.width, this.height);
-    }
-
-    @Override
-    protected void renderFrame(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 92, 76, this.width, this.height);
-    }
-
-    @Override
-    protected void renderIcon(PoseStack stack, int mouseX, int mouseY, float partialTick) {
-        RenderSystem.setShaderTexture(0, MastersStaffScreen.LOCATION);
-        this.blit(stack, this.x, this.y, 92, 95, this.width, this.height);
     }
 
     @Override
@@ -81,6 +61,7 @@ public class ChopOrderButton extends AbstractAdjustableOrderButton {
 
     @Override
     public void onSelectedTick() {
+        super.onSelectedTick();
         MastersStaffScreen.BlockStaffScreen screen = this.getScreen();
         LocalPlayer player = screen.getPlayer();
         float partialTick = Minecraft.getInstance().getPartialTick();
