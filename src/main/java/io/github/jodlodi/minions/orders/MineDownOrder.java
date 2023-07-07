@@ -32,17 +32,18 @@ import java.util.Map;
 
 @ParametersAreNonnullByDefault
 public class MineDownOrder extends AbstractOrder {
+    // Static
     public static final ResourceLocation ID = MinionsRemastered.locate("mine_down_order");
     public static final List<Direction> DIRECTIONS = List.of(Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST);
     public static final BlockState STAIRS = Blocks.BLACKSTONE_STAIRS.defaultBlockState();
 
-    //Stored variables
+    // Stored variables
     private final BlockPos minPos;
     private final BlockPos maxPos;
     private final int startDir;
     private final int stairs;
 
-    //Temp variables
+    // Temp variables
     private final Map<Integer, BlockPos> mineMap = new HashMap<>();
     private final Map<Integer, Float> breakMap = new HashMap<>();
     private int currentY;
@@ -247,26 +248,19 @@ public class MineDownOrder extends AbstractOrder {
     @Override
     public void tick(IMasterCapability masterCapability, Player player, Level level) {
         if (!level.isClientSide) {
-            boolean allEmpty = true;
             for (int i = 0; i < 4; i++) {
-                if (this.mineMap.get(i) != null) allEmpty = false;
+                if (this.mineMap.get(i) != null && masterCapability.getMinions().get(i) != null) return; // Return in a non-null minion still has a block to break
             }
 
-            if (allEmpty) {
-                BlockPos one = new BlockPos(this.minPos.getX(), this.currentY, this.minPos.getZ());
-                BlockPos two = new BlockPos(this.maxPos.getX(), this.currentY, this.maxPos.getZ());
+            BlockPos one = new BlockPos(this.minPos.getX(), this.currentY, this.minPos.getZ());
+            BlockPos two = new BlockPos(this.maxPos.getX(), this.currentY, this.maxPos.getZ());
 
-                boolean flag = true;
-
-                for (BlockPos pos : BlockPos.betweenClosed(one, two)) {
-                    if (this.isBlockBreakableDeluxe(level.getBlockState(pos), level, pos, player)) flag = false;
-                }
-
-                if (flag) {
-                    this.currentY -= 1;
-                    if (level.isOutsideBuildHeight(this.currentY)) masterCapability.setOrder(null);
-                }
+            for (BlockPos pos : BlockPos.betweenClosed(one, two)) {
+                if (this.isBlockBreakableDeluxe(level.getBlockState(pos), level, pos, player)) return; // Return if a block that could still be broken is found
             }
+
+            this.currentY -= 1;
+            if (level.isOutsideBuildHeight(this.currentY)) masterCapability.setOrder(null);
         } else {
             MinUtil.particleAtBorders(player.getRandom(), this.maxPos.getY() + 1.1D, level, this.minPos.getX(), this.maxPos.getX() + 1, this.minPos.getZ(), this.maxPos.getZ() + 1);
         }

@@ -26,15 +26,16 @@ import java.util.Map;
 
 @ParametersAreNonnullByDefault
 public class MineAheadOrder extends AbstractOrder {
+    // Static
     public static final ResourceLocation ID = MinionsRemastered.locate("mine_ahead_order");
 
-    //Stored variables
+    // Stored variables
     private final BlockPos minPos;
     private final BlockPos maxPos;
     private final Direction direction;
     private final int depth;
 
-    //Temp variables
+    // Temp variables
     private final Map<Integer, BlockPos> mineMap = new HashMap<>();
     private final Map<Integer, Float> breakMap = new HashMap<>();
     private int current;
@@ -168,26 +169,19 @@ public class MineAheadOrder extends AbstractOrder {
     @Override
     public void tick(IMasterCapability masterCapability, Player player, Level level) {
         if (!level.isClientSide) {
-            boolean allEmpty = true;
             for (int i = 0; i < 4; i++) {
-                if (this.mineMap.get(i) != null) allEmpty = false;
+                if (this.mineMap.get(i) != null && masterCapability.getMinions().get(i) != null) return; // Return in a non-null minion still has a block to break
             }
 
-            if (allEmpty) {
-                BlockPos one = this.minPos.relative(this.direction, this.current);
-                BlockPos two = this.maxPos.relative(this.direction, this.current);
+            BlockPos one = this.minPos.relative(this.direction, this.current);
+            BlockPos two = this.maxPos.relative(this.direction, this.current);
 
-                boolean flag = true;
-
-                for (BlockPos pos : BlockPos.betweenClosed(one, two)) {
-                    if (MinUtil.isBlockBreakable(level.getBlockState(pos), level, pos, player)) flag = false;
-                }
-
-                if (flag) {
-                    this.current += 1;
-                    if (this.current >= this.depth || !level.isInWorldBounds(one.relative(this.direction))) masterCapability.setOrder(null);
-                }
+            for (BlockPos pos : BlockPos.betweenClosed(one, two)) {
+                if (MinUtil.isBlockBreakable(level.getBlockState(pos), level, pos, player)) return; // Return if a block that could still be broken is found
             }
+
+            this.current += 1;
+            if (this.current >= this.depth || !level.isInWorldBounds(one.relative(this.direction))) masterCapability.setOrder(null);
         } else {
             boolean axis = this.direction.getAxis() == Direction.Axis.Z;
             int mul = (axis ? this.direction.getStepZ() : this.direction.getStepX()) == -1 ? 1 : 0;

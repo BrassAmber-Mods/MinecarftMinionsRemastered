@@ -13,7 +13,6 @@ public class OrderRegistry {
 
     public static void init() {
         ORDERS.put(MineDownOrder.ID, MineDownOrder::new);
-        ORDERS.put(FollowMasterOrder.ID, FollowMasterOrder::new);
         ORDERS.put(CarryLivingOrder.ID, CarryLivingOrder::new);
         ORDERS.put(MineAheadOrder.ID, MineAheadOrder::new);
         ORDERS.put(ChopOrder.ID, ChopOrder::new);

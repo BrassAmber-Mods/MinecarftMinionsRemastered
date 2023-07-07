@@ -33,15 +33,16 @@ import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
 public class ChopOrder extends AbstractOrder {
+    // Static
     public static final ResourceLocation ID = MinionsRemastered.locate("chop_order");
     public static final Predicate<BlockState> DEFAULT_CHOP = (blockState) -> blockState.is(BlockTags.LOGS);
 
-    //Stored variables
+    // Stored variables
     private final BlockPos minPos;
     private final BlockPos maxPos;
     private final Block predicate;
 
-    //Temp variables
+    // Temp variables
     private final Map<Integer, BlockPos> mineMap = new HashMap<>();
     private final Map<Integer, Float> breakMap = new HashMap<>();
 
@@ -171,19 +172,14 @@ public class ChopOrder extends AbstractOrder {
     @Override
     public void tick(IMasterCapability masterCapability, Player player, Level level) {
         if (!level.isClientSide) {
-            boolean allEmpty = true;
             for (int i = 0; i < 4; i++) {
-                if (this.mineMap.get(i) != null) allEmpty = false;
+                if (this.mineMap.get(i) != null && masterCapability.getMinions().get(i) != null) return; // Return in a non-null minion still has a block to break
             }
 
-            if (allEmpty) {
-                for (BlockPos pos : BlockPos.betweenClosed(this.minPos, this.maxPos)) {
-                    if (this.isBlockBreakableDeluxe(level.getBlockState(pos), level, pos, player)) {
-                        return;
-                    }
-                }
-                masterCapability.setOrder(null);
+            for (BlockPos pos : BlockPos.betweenClosed(this.minPos, this.maxPos)) {
+                if (this.isBlockBreakableDeluxe(level.getBlockState(pos), level, pos, player)) return; // Return if a block that could still be broken is found
             }
+            masterCapability.setOrder(null);
         } else {
             MinUtil.particlesAroundTag(player.getRandom(), level, this.minPos, this.maxPos, this.getPredicate());
         }
