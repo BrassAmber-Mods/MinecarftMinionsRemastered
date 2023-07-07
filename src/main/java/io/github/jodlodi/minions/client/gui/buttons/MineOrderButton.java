@@ -69,7 +69,7 @@ public class MineOrderButton extends AbstractAdjustableOrderButton {
         BlockPos maxPos = this.scale == 0 ? new BlockPos(context) : context.above(this.scale).relative(clockAxis, this.scale);
 
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
-            if (player.getRandom().nextInt(3) == 0) {
+            if (player.getRandom().nextInt(12) == 0) {
                 double randXZ = player.getRandom().nextDouble() - 0.5D;
                 double randY = player.getRandom().nextDouble();
 

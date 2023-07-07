@@ -93,13 +93,17 @@ public class MinUtil {
         level.addParticle(ParticleTypes.SMOKE, maxX, y, maxZ, 0.0D, 0.0D, 0.0D);
 
         for (int x = minX; x <= maxX - 1; x++) {
-            level.addParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, minZ, 0.0D, 0.0D, 0.0D);
-            level.addParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, maxZ, 0.0D, 0.0D, 0.0D);
+            if (random.nextInt(4) == 0) {
+                level.addParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, minZ, 0.0D, 0.0D, 0.0D);
+                level.addParticle(ParticleTypes.SMOKE, x + random.nextDouble(), y, maxZ, 0.0D, 0.0D, 0.0D);
+            }
         }
 
         for (int z = minZ; z <= maxZ - 1; z++) {
-            level.addParticle(ParticleTypes.SMOKE, minX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
-            level.addParticle(ParticleTypes.SMOKE, maxX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            if (random.nextInt(4) == 0) {
+                level.addParticle(ParticleTypes.SMOKE, minX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+                level.addParticle(ParticleTypes.SMOKE, maxX, y, z + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            }
         }
     }
 
@@ -110,13 +114,17 @@ public class MinUtil {
         level.addParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, maxY, axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
 
         for (int xz = minXz; xz <= maxXz - 1; xz++) {
-            level.addParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, minY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
-            level.addParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, maxY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            if (random.nextInt(4) == 0) {
+                level.addParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, minY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+                level.addParticle(ParticleTypes.SMOKE, axis ? xz + random.nextDouble() : constant, maxY, axis ? constant : xz + random.nextDouble(), 0.0D, 0.0D, 0.0D);
+            }
         }
 
         for (int y = minY; y <= maxY - 1; y++) {
-            level.addParticle(ParticleTypes.SMOKE, axis ? minXz : constant, y + random.nextDouble(), axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
-            level.addParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, y + random.nextDouble(), axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+            if (random.nextInt(4) == 0) {
+                level.addParticle(ParticleTypes.SMOKE, axis ? minXz : constant, y + random.nextDouble(), axis ? constant : minXz, 0.0D, 0.0D, 0.0D);
+                level.addParticle(ParticleTypes.SMOKE, axis ? maxXz : constant, y + random.nextDouble(), axis ? constant : maxXz, 0.0D, 0.0D, 0.0D);
+            }
         }
     }
 

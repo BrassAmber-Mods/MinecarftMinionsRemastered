@@ -99,10 +99,7 @@ public class DigOrderButton extends AbstractAdjustableOrderButton {
         BlockPos maxPos = screen.getContext().getBlockPos().south(offset - (!south ? trueSet : 0)).east(offset - (!east ? trueSet : 0));
 
         for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
-            if (level.getBlockState(pos).getMaterial().isReplaceable()) pos = pos.below();
-            if (level.getBlockState(pos).getMaterial().isReplaceable()) pos = pos.below();
-
-            if (player.getRandom().nextInt(3) == 0) {
+            if (player.getRandom().nextInt(12) == 0) {
                 double randX = player.getRandom().nextDouble();
                 double randZ = player.getRandom().nextDouble();
 
