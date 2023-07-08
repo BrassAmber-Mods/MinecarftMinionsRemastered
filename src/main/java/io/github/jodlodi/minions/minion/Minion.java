@@ -9,6 +9,7 @@ import io.github.jodlodi.minions.registry.CommonRegistry;
 import io.github.jodlodi.minions.registry.PacketRegistry;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -57,6 +58,7 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     protected static final EntityDataAccessor<Integer> DATA_BLINKING = SynchedEntityData.defineId(Minion.class, EntityDataSerializers.INT);
     protected static final EntityDataAccessor<Integer> DATA_COLOR = SynchedEntityData.defineId(Minion.class, EntityDataSerializers.INT);
     protected static final EntityDataAccessor<Boolean> DATA_SITTING = SynchedEntityData.defineId(Minion.class, EntityDataSerializers.BOOLEAN);
+    protected static final Vec3i CUSTOM_ITEM_PICKUP_REACH = new Vec3i(2, 1, 2);
     public static final int BLINK_COOLDOWN = 20;
     public static final int DEFAULT_RED = 9185572;
     public static final float DEFAULT_WIDTH = 0.6F;
@@ -228,18 +230,13 @@ public class Minion extends PathfinderMob implements OwnableEntity {
                 if (sim.getCount() < inputStack.getCount()) {
                     outputIItemHandler.insertItem(firstProperStack, inputStack, false);
                     if (sim.isEmpty()) {
-                        item.discard();
                         this.take(item, inputStack.getCount());
+                        item.discard();
                     } else item.setItem(sim);
                 }
             }
 
         }
-    }
-
-    @Override
-    public boolean isNoGravity() {
-        return super.isNoGravity() || !this.canBlink();
     }
 
     @Override
@@ -293,6 +290,11 @@ public class Minion extends PathfinderMob implements OwnableEntity {
     @Override
     public boolean hurt(DamageSource damageSource, float v) {
         return false;
+    }
+
+    @Override
+    protected Vec3i getPickupReach() {
+        return CUSTOM_ITEM_PICKUP_REACH;
     }
 
     public boolean isEnactingOrder() {
